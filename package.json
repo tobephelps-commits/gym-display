@@ -1,0 +1,15 @@
+{
+  "name": "gym-display",
+  "version": "1.0.0",
+  "description": "Raspberry Pi 5 CrossFit gym display system with zone rotation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "js-yaml": "^4.1.0",
+    "chokidar": "^3.6.0"
+  }
+}
