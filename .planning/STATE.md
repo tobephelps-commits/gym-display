@@ -5,14 +5,15 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The three-zone rotation (WOD, video, roster) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** Phase 1 — Foundation
+**Current focus:** v1.0 MVP — Phase 1 Foundation
 
 ## Current Position
 
+Milestone: v1.0 MVP
 Phase: 1 of 5 (Foundation)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-02-21 — Project initialized
+Last activity: 2026-02-21 — Milestone v1.0 MVP created
 
 Progress: ░░░░░░░░░░ 0%
 
@@ -53,5 +54,9 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Project initialization complete
+Stopped at: Milestone v1.0 MVP initialization
 Resume file: None
+
+### Roadmap Evolution
+
+- Milestone v1.0 MVP created: Full gym display system, 5 phases (Phase 1-5)

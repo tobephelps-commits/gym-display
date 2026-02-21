@@ -8,6 +8,10 @@ Build a Raspberry Pi 5-based gym display that rotates through three full-screen 
 
 None
 
+## Milestones
+
+- 🚧 **v1.0 MVP** - Phases 1-5 (in progress)
+
 ## Phases
 
 **Phase Numbering:**
@@ -24,7 +28,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ## Phase Details
 
-### Phase 1: Foundation
+### 🚧 v1.0 MVP (In Progress)
+
+**Milestone Goal:** Deliver a fully functional gym display system with all three zones (WOD, video, roster) rotating reliably on a Raspberry Pi 5 with auto-start and crash recovery.
+
+#### Phase 1: Foundation
 **Goal**: Express server serving a frontend that rotates through three zone containers with CSS crossfade transitions, driven by a YAML config with hot-reload
 **Depends on**: Nothing (first phase)
 **Research**: Unlikely (standard Node.js/Express patterns, chokidar file watching)
@@ -35,7 +43,7 @@ Plans:
 - [ ] 01-02: Frontend HTML/CSS/JS with three zone containers, crossfade transitions, and rotation engine
 - [ ] 01-03: Backend zone controller API and frontend-backend integration
 
-### Phase 2: WOD Display
+#### Phase 2: WOD Display
 **Goal**: Puppeteer-based WodScreen scraper that captures WOD screenshots on interval, served full-screen in the WOD zone with stale-data indicator
 **Depends on**: Phase 1
 **Research**: Likely (WodScreen login automation, page structure and selectors)
@@ -46,7 +54,7 @@ Plans:
 - [ ] 02-01: Puppeteer WodScreen automation — login, navigate, screenshot capture
 - [ ] 02-02: WOD API endpoint, frontend zone integration, stale-data indicator
 
-### Phase 3: Video System
+#### Phase 3: Video System
 **Goal**: Video manager with YouTube/Vimeo URL parsing, playlist rotation, iframe embedding with autoplay, completion detection, and config hot-reload
 **Depends on**: Phase 1
 **Research**: Unlikely (YouTube/Vimeo iframe embed APIs are well-documented)
@@ -56,7 +64,7 @@ Plans:
 - [ ] 03-01: Video manager service — URL parsing, playlist state, hot-reload
 - [ ] 03-02: Video zone frontend — iframe embedding, autoplay, completion detection, playlist advancement
 
-### Phase 4: MindBody Integration
+#### Phase 4: MindBody Integration
 **Goal**: MindBody API client with auth token management, class schedule and roster fetching, roster zone UI, and class-aware rotation boosting
 **Depends on**: Phase 1
 **Research**: Likely (MindBody Public API v6, authentication flow, endpoint contracts)
@@ -68,7 +76,7 @@ Plans:
 - [ ] 04-02: Roster zone UI — class info display, athlete list, next-class preview
 - [ ] 04-03: Class-aware rotation boosting in zone controller
 
-### Phase 5: Deployment & Reliability
+#### Phase 5: Deployment & Reliability
 **Goal**: Production-ready deployment with systemd auto-start, Chromium kiosk launcher, HDMI CEC off-hours control, setup script, and log rotation
 **Depends on**: Phases 1-4
 **Research**: Unlikely (systemd, HDMI CEC, Chromium kiosk — established Linux patterns)
@@ -84,10 +92,10 @@ Plans:
 **Execution Order:**
 Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
-| 2. WOD Display | 0/2 | Not started | - |
-| 3. Video System | 0/2 | Not started | - |
-| 4. MindBody Integration | 0/3 | Not started | - |
-| 5. Deployment & Reliability | 0/3 | Not started | - |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Foundation | v1.0 | 0/3 | Not started | - |
+| 2. WOD Display | v1.0 | 0/2 | Not started | - |
+| 3. Video System | v1.0 | 0/2 | Not started | - |
+| 4. MindBody Integration | v1.0 | 0/3 | Not started | - |
+| 5. Deployment & Reliability | v1.0 | 0/3 | Not started | - |
