@@ -39,9 +39,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: TBD
 
 Plans:
-- [ ] 01-01: Project structure, package.json, Express server with YAML config loading and hot-reload
-- [ ] 01-02: Frontend HTML/CSS/JS with three zone containers, crossfade transitions, and rotation engine
-- [ ] 01-03: Backend zone controller API and frontend-backend integration
+- [ ] 01-01: Project scaffold, Express server, YAML config loading with chokidar hot-reload
+- [ ] 01-02: Frontend zone containers with crossfade, backend zone controller, rotation engine integration
 
 #### Phase 2: WOD Display
 **Goal**: Puppeteer-based WodScreen scraper that captures WOD screenshots on interval, served full-screen in the WOD zone with stale-data indicator
@@ -94,7 +93,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Foundation | v1.0 | 0/3 | Not started | - |
+| 1. Foundation | v1.0 | 0/2 | Not started | - |
 | 2. WOD Display | v1.0 | 0/2 | Not started | - |
 | 3. Video System | v1.0 | 0/2 | Not started | - |
 | 4. MindBody Integration | v1.0 | 0/3 | Not started | - |
