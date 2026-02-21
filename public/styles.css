@@ -1,0 +1,63 @@
+/* Reset */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #000;
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Zone containers — stacked full-screen with crossfade */
+.zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.zone.active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+/* Placeholder styling — centered large text */
+.zone-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.zone-placeholder h1 {
+  color: #fff;
+  font-size: 4rem;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Distinct background colors per zone */
+.zone-wod {
+  background: #1a1a2e;
+}
+
+.zone-video {
+  background: #0a1628;
+}
+
+.zone-roster {
+  background: #0a2818;
+}
