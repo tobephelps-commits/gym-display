@@ -6,10 +6,13 @@ const configLoader = require('./services/config-loader');
 configLoader.loadConfig();
 configLoader.startWatching();
 
+const zoneController = require('./services/zone-controller');
+
 const config = configLoader.getConfig();
 const port = (config.system && config.system.port) || 3000;
 
 const app = express();
+app.use(express.json());
 
 // Serve static files from public/
 app.use(express.static(path.join(__dirname, 'public')));
@@ -34,6 +37,16 @@ app.get('/api/config', (req, res) => {
   };
 
   res.json(sanitized);
+});
+
+// Zone API endpoints
+app.get('/api/zones/current', (req, res) => {
+  res.json(zoneController.getZoneState());
+});
+
+app.post('/api/zones/advance', (req, res) => {
+  const state = zoneController.advanceZone();
+  res.json(state);
 });
 
 // Log config reloads
