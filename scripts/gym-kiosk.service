@@ -1,0 +1,15 @@
+[Unit]
+Description=Gym Display Kiosk
+After=gym-display.service
+Wants=gym-display.service
+
+[Service]
+Type=simple
+User=pi
+Environment=DISPLAY=:0
+ExecStart=/home/pi/gym-display/scripts/start-kiosk.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=graphical.target

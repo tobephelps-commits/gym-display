@@ -169,8 +169,10 @@ configLoader.onConfigChange(() => {
   console.log('Config reloaded');
 });
 
-const server = app.listen(port, '0.0.0.0', () => {
-  console.log(`Gym Display server running on port ${port}`);
+const bindAddress = process.env.NODE_ENV === 'production' ? '127.0.0.1' : '0.0.0.0';
+
+const server = app.listen(port, bindAddress, () => {
+  console.log(`Gym Display server running on ${bindAddress}:${port} (${process.env.NODE_ENV || 'development'})`);
 
   // Initialize WodScraper — best-effort, server runs even if this fails
   (async () => {
