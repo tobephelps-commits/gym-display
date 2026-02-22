@@ -9,7 +9,7 @@ const { createProxyMiddleware, responseInterceptor } = require('http-proxy-middl
  */
 function createWodProxy(getCookiesFn) {
   return createProxyMiddleware({
-    target: 'https://wodscreen.com',
+    target: 'https://www.wodscreen.com',
     changeOrigin: true,
     selfHandleResponse: true,
     pathRewrite: { '^/wod-proxy': '' },
@@ -24,14 +24,14 @@ function createWodProxy(getCookiesFn) {
         if (contentType.includes('text/html')) {
           let body = buffer.toString('utf8');
           // Inject base href so relative URLs resolve against WodScreen origin
-          body = body.replace('<head>', '<head><base href="https://wodscreen.com/">');
+          body = body.replace('<head>', '<head><base href="https://www.wodscreen.com/">');
           return body;
         }
         return buffer;
       }),
       proxyReq: (proxyReq, req, res) => {
         // Set Host header to WodScreen
-        proxyReq.setHeader('Host', 'wodscreen.com');
+        proxyReq.setHeader('Host', 'www.wodscreen.com');
 
         // Inject session cookies from WodScraper
         const cookies = getCookiesFn();

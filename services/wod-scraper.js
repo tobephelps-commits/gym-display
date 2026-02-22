@@ -193,12 +193,12 @@ class WodScraper {
         console.log('[WodScraper] No explicit launch button found — may already be on WOD page');
       }
 
-      // Store the resulting page URL
-      this.wodPageUrl = this.page.url();
+      // Store the resulting page URL as relative pathname (for use with /wod-proxy)
+      this.wodPageUrl = new URL(this.page.url()).pathname;
       console.log(`[WodScraper] WOD page URL: ${this.wodPageUrl}`);
 
-      // Extract and store cookies
-      this.cookies = await this.page.cookies();
+      // Extract and store cookies (explicitly request for www.wodscreen.com domain)
+      this.cookies = await this.page.cookies('https://www.wodscreen.com');
       console.log(`[WodScraper] Stored ${this.cookies.length} cookies`);
 
       // Capture initial screenshot
