@@ -26,6 +26,7 @@ class ZoneController {
 
   /**
    * Extract duration in ms for each zone from config.
+   * For video zone with play_full, fallback_seconds is a safety net only.
    */
   _extractDurations(zones) {
     return {
@@ -36,6 +37,15 @@ class ZoneController {
   }
 
   /**
+   * Check if video zone is configured for play_full mode.
+   */
+  _isVideoPlayFull() {
+    const config = configLoader.getConfig() || {};
+    const zones = config.zones || {};
+    return !!(zones.video && zones.video.play_full);
+  }
+
+  /**
    * Returns current zone state.
    */
   getZoneState() {
@@ -43,11 +53,14 @@ class ZoneController {
     const nextIndex = (this._currentIndex + 1) % this._rotationOrder.length;
     const nextZone = this._rotationOrder[nextIndex];
 
+    const playFull = currentZone === 'video' && this._isVideoPlayFull();
+
     return {
       currentZone,
       nextZone,
       durationMs: this._durations[currentZone] || 60000,
-      rotationOrder: this._rotationOrder
+      rotationOrder: this._rotationOrder,
+      playFull
     };
   }
 
