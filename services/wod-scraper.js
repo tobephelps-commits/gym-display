@@ -193,6 +193,36 @@ class WodScraper {
         console.log('[WodScraper] No explicit launch button found — may already be on WOD page');
       }
 
+      // Look for gym authorization / selection step (WodScreen two-step auth)
+      console.log('[WodScraper] Looking for gym authorization...');
+      try {
+        const gymAuthElement = await this.page.evaluate(() => {
+          const keywords = ['authorize', 'select gym', 'choose', 'continue', 'select box', 'gym'];
+          const clickable = document.querySelectorAll('button, a, [role="button"], .btn');
+          for (const el of clickable) {
+            const text = (el.textContent || '').toLowerCase().trim();
+            const style = window.getComputedStyle(el);
+            const visible = style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+            if (visible && keywords.some(kw => text.includes(kw))) {
+              // Return a unique selector path for this element
+              el.setAttribute('data-wod-auth-click', 'true');
+              return true;
+            }
+          }
+          return false;
+        });
+
+        if (gymAuthElement) {
+          await this.page.click('[data-wod-auth-click="true"]');
+          console.log('[WodScraper] Clicked gym authorization element, waiting for page to settle...');
+          await this._sleep(5000);
+        } else {
+          console.log('[WodScraper] No gym authorization prompt found — continuing');
+        }
+      } catch (authErr) {
+        console.log(`[WodScraper] Gym authorization step skipped: ${authErr.message}`);
+      }
+
       // Store the resulting page URL as relative pathname (for use with /wod-proxy)
       this.wodPageUrl = new URL(this.page.url()).pathname;
       console.log(`[WodScraper] WOD page URL: ${this.wodPageUrl}`);
