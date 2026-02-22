@@ -10,7 +10,7 @@ None
 
 ## Milestones
 
-- 🚧 **v1.0 MVP** - Phases 1-5 (in progress)
+- ✅ **v1.0 MVP** - Phases 1-5 (complete)
 
 ## Phases
 
@@ -24,11 +24,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: WOD Display** - Puppeteer WodScreen automation, screenshot caching, WOD zone rendering
 - [x] **Phase 3: Video System** - Video manager, URL parsing, iframe embedding, playlist advancement
 - [x] **Phase 4: MindBody Integration** - API client, auth token management, roster UI, class-aware boost
-- [ ] **Phase 5: Deployment & Reliability** - systemd services, kiosk launcher, HDMI CEC (9pm–4:30am), RPi Connect, setup script
+- [x] **Phase 5: Deployment & Reliability** - systemd services, kiosk launcher, HDMI CEC (9pm–4:30am), RPi Connect, setup script
 
 ## Phase Details
 
-### 🚧 v1.0 MVP (In Progress)
+### ✅ v1.0 MVP (Complete)
 
 **Milestone Goal:** Deliver a fully functional gym display system with all three zones (WOD, video, roster) rotating reliably on a Raspberry Pi 5 with auto-start and crash recovery.
 
@@ -82,9 +82,9 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 05-01: systemd service files, Chromium kiosk launcher script, production server binding
-- [ ] 05-02: HDMI CEC off-hours TV control (9pm off / 4:30am on) and log rotation
-- [ ] 05-03: Automated setup script (setup.sh) with RPi Connect for Raspberry Pi OS provisioning
+- [x] 05-01: systemd service files, Chromium kiosk launcher script, production server binding
+- [x] 05-02: HDMI CEC off-hours TV control (9pm off / 4:30am on) and log rotation
+- [x] 05-03: Automated setup script (setup.sh) with RPi Connect for Raspberry Pi OS provisioning
 
 ## Progress
 
@@ -97,4 +97,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. WOD Display | v1.0 | 2/2 | Complete | 2026-02-22 |
 | 3. Video System | v1.0 | 2/2 | Complete | 2026-02-21 |
 | 4. MindBody Integration | v1.0 | 3/3 | Complete | 2026-02-21 |
-| 5. Deployment & Reliability | v1.0 | 0/3 | Not started | - |
+| 5. Deployment & Reliability | v1.0 | 3/3 | Complete | 2026-02-22 |
