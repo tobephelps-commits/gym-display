@@ -11,16 +11,16 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 Milestone: v1.0 MVP
 Phase: 5 of 5 (Deployment & Reliability)
-Plan: 2 of 3 in current phase
-Status: Plan complete
-Last activity: 2026-02-22 — Completed 05-02-PLAN.md
+Plan: 3 of 3 in current phase
+Status: Plan complete — Phase 5 COMPLETE — v1.0 MVP COMPLETE
+Last activity: 2026-02-22 — Completed 05-03-PLAN.md
 
-Progress: █████████░ 90%
+Progress: ██████████ 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: ~3 min
 - Total execution time: ~0.5 hours
 
@@ -32,10 +32,10 @@ Progress: █████████░ 90%
 | 02-wod-display | 2 | ~4 min | ~2 min |
 | 03-video-system | 2 | ~6 min | ~3 min |
 | 04-mindbody-integration | 3 | ~11 min | ~3.5 min |
-| 05-deployment-reliability | 2 | ~6 min | ~3 min |
+| 05-deployment-reliability | 3 | ~8 min | ~2.7 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-02, 04-03, 05-01, 05-02
+- Last 5 plans: 04-03, 05-01, 05-02, 05-03
 - Trend: Steady
 
 ## Accumulated Context
@@ -72,6 +72,9 @@ Recent decisions affecting current work:
 - cec-client -s -d 1 for reliable HDMI CEC commands (stdin mode, minimal debug)
 - Persistent=true on systemd timers ensures missed triggers fire on boot
 - Logrotate for file logs; journald limits (100M/7day) handled by setup.sh
+- SUDO_USER detection in setup.sh for non-pi username support
+- setup.sh sed-replaces /home/pi and User=pi in systemd units at install time
+- Missing app directory is a warning in setup.sh (can run before git clone)
 
 ### Pending Todos
 
@@ -84,8 +87,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 05-02-PLAN.md — HDMI CEC off-hours control & log rotation
-Resume file: .planning/phases/05-deployment-reliability/05-02-SUMMARY.md
+Stopped at: Completed 05-03-PLAN.md — Comprehensive Pi provisioning script (v1.0 MVP COMPLETE)
+Resume file: .planning/phases/05-deployment-reliability/05-03-SUMMARY.md
 
 ### Roadmap Evolution
 
