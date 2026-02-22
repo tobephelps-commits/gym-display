@@ -21,8 +21,27 @@
   </div>
 
   <div id="zone-roster" class="zone zone-roster">
-    <div class="zone-placeholder">
-      <h1>Roster Zone</h1>
+    <!-- Loading state -->
+    <div id="roster-loading" class="roster-state">Loading roster...</div>
+
+    <!-- No class active state -->
+    <div id="roster-empty" class="roster-state hidden">
+      <div class="roster-empty-message">No class in session</div>
+    </div>
+
+    <!-- Active roster display -->
+    <div id="roster-display" class="roster-state hidden">
+      <div class="roster-header">
+        <div id="roster-class-name" class="roster-class-name"></div>
+        <div id="roster-class-meta" class="roster-class-meta"></div>
+      </div>
+      <div id="roster-grid" class="roster-grid"></div>
+      <div id="roster-count" class="roster-count"></div>
+    </div>
+
+    <!-- Error/unconfigured state -->
+    <div id="roster-error" class="roster-state hidden">
+      <div class="roster-empty-message">Roster unavailable</div>
     </div>
   </div>
 
