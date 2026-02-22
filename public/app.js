@@ -24,6 +24,11 @@ function onYouTubeIframeAPIReady() {
   var wodLastStatus = null;
   var wodScreenshotRefreshTimer = null;
 
+  // Roster state
+  var rosterPollTimer = null;
+  var rosterLastData = null;
+  var mindbodyConfigured = false;
+
   // Video state
   var videoPlaylist = [];
   var videoIndex = 0;
@@ -339,6 +344,111 @@ function onYouTubeIframeAPIReady() {
   }
 
   /**
+   * Show one roster-state element, hide all others.
+   */
+  function showRosterState(stateId) {
+    var states = document.querySelectorAll('.roster-state');
+    states.forEach(function(el) { el.classList.add('hidden'); });
+    var target = document.getElementById(stateId);
+    if (target) { target.classList.remove('hidden'); }
+  }
+
+  /**
+   * Update the roster display with fetched data.
+   */
+  function updateRosterDisplay(data) {
+    if (!data || !data.classInfo) {
+      showRosterState('roster-empty');
+      return;
+    }
+
+    showRosterState('roster-display');
+
+    // Class name
+    var classNameEl = document.getElementById('roster-class-name');
+    if (classNameEl) {
+      classNameEl.textContent = data.classInfo.name || 'Class';
+    }
+
+    // Class meta (coach or time)
+    var classMetaEl = document.getElementById('roster-class-meta');
+    if (classMetaEl) {
+      if (data.classInfo.staffName) {
+        classMetaEl.textContent = 'Coach: ' + data.classInfo.staffName;
+      } else if (data.classInfo.startTime && data.classInfo.endTime) {
+        classMetaEl.textContent = data.classInfo.startTime + ' – ' + data.classInfo.endTime;
+      } else {
+        classMetaEl.textContent = '';
+      }
+    }
+
+    // Athlete grid
+    var grid = document.getElementById('roster-grid');
+    if (grid) {
+      grid.innerHTML = '';
+      var athletes = data.athletes || [];
+      athletes.forEach(function(athlete) {
+        var div = document.createElement('div');
+        div.className = 'roster-athlete';
+        div.textContent = athlete;
+        grid.appendChild(div);
+      });
+
+      // Apply compact/dense class based on count
+      grid.classList.remove('roster-grid-compact', 'roster-grid-dense');
+      if (athletes.length > 25) {
+        grid.classList.add('roster-grid-dense');
+      } else if (athletes.length > 15) {
+        grid.classList.add('roster-grid-compact');
+      }
+    }
+
+    // Athlete count
+    var countEl = document.getElementById('roster-count');
+    if (countEl) {
+      var count = data.count || 0;
+      countEl.textContent = count + ' athlete' + (count !== 1 ? 's' : '') + ' checked in';
+    }
+  }
+
+  /**
+   * Poll /api/roster for current class and athlete data.
+   */
+  function pollRoster() {
+    fetch('/api/roster')
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        updateRosterDisplay(data);
+        rosterLastData = data;
+      })
+      .catch(function(err) {
+        console.error('Roster poll failed:', err);
+        if (!rosterLastData) {
+          showRosterState('roster-error');
+        }
+        // If we have previous data, keep showing it (stale > error)
+      });
+  }
+
+  /**
+   * Called when roster zone becomes active — start polling.
+   */
+  function onRosterZoneActive() {
+    pollRoster();
+    rosterPollTimer = setInterval(pollRoster, 10000);
+  }
+
+  /**
+   * Called when roster zone becomes inactive — stop polling.
+   */
+  function onRosterZoneInactive() {
+    if (rosterPollTimer) {
+      clearInterval(rosterPollTimer);
+      rosterPollTimer = null;
+    }
+  }
+
+  /**
    * Show a zone by name, triggering CSS crossfade transition.
    */
   function showZone(zoneName) {
@@ -365,6 +475,13 @@ function onYouTubeIframeAPIReady() {
       onVideoZoneActive();
     } else if (previousZone === 'video') {
       onVideoZoneInactive();
+    }
+
+    // Roster zone activation/deactivation
+    if (zoneName === 'roster') {
+      onRosterZoneActive();
+    } else if (previousZone === 'roster') {
+      onRosterZoneInactive();
     }
   }
 
@@ -434,6 +551,10 @@ function onYouTubeIframeAPIReady() {
         // Update Instagram settings
         var ig = config.instagram || {};
         reelsMinDisplaySeconds = ig.min_display_seconds || 30;
+
+        // Update MindBody configuration status
+        var mb = config.mindbody || {};
+        mindbodyConfigured = !!mb.configured;
       })
       .catch(function (err) {
         console.error('Config fetch failed:', err);
@@ -638,11 +759,22 @@ function onYouTubeIframeAPIReady() {
         var ig = config.instagram || {};
         reelsMinDisplaySeconds = ig.min_display_seconds || 30;
 
+        // Read MindBody configuration status
+        var mb = config.mindbody || {};
+        mindbodyConfigured = !!mb.configured;
+
         // Initialize Reels player
         initReelsPlayer();
 
         // Initialize WOD display management
         initWod();
+
+        // Initialize roster state
+        if (!mindbodyConfigured) {
+          showRosterState('roster-error');
+        } else {
+          showRosterState('roster-loading');
+        }
 
         // Start with first zone
         currentIndex = 0;
