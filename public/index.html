@@ -8,9 +8,10 @@
 </head>
 <body>
   <div id="zone-wod" class="zone zone-wod">
-    <div class="zone-placeholder">
-      <h1>WOD Zone</h1>
-    </div>
+    <iframe id="wod-iframe" src="" class="wod-display wod-iframe hidden" sandbox="allow-scripts allow-same-origin"></iframe>
+    <img id="wod-screenshot" src="" class="wod-display wod-screenshot hidden" alt="WOD Screenshot">
+    <div id="wod-loading" class="wod-display wod-loading">Loading WOD...</div>
+    <div id="wod-error" class="wod-display wod-error hidden">WOD temporarily unavailable</div>
   </div>
 
   <div id="zone-video" class="zone zone-video">
