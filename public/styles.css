@@ -107,6 +107,17 @@ body {
   height: 100%;
 }
 
+/* Reels player — fill entire video zone, crop vertical to fit 16:9 */
+#reels-player {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #0a1628;
+}
+
 /* Video zone fallback message */
 #video-no-content {
   position: absolute;

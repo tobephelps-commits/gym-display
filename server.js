@@ -40,6 +40,10 @@ app.get('/api/config', (req, res) => {
       title: v.title,
       enabled: v.enabled
     })),
+    instagram: {
+      enabled: (current.instagram && current.instagram.enabled) || false,
+      min_display_seconds: (current.instagram && current.instagram.min_display_seconds) || 30
+    },
     system: current.system || {}
   };
 

@@ -31,6 +31,15 @@ function onYouTubeIframeAPIReady() {
   var youtubeReady = false;
   var videoZoneActive = false;
 
+  // Reels state
+  var reelsList = [];
+  var currentReelIndex = 0;
+  var reelsEnabled = false;
+  var youtubeComplete = false;
+  var reelsMinDisplaySeconds = 30;
+  var reelsStartTime = null;
+  var reelsMinReached = false;
+
   /**
    * Initialize YouTube player instance.
    */
@@ -79,54 +88,75 @@ function onYouTubeIframeAPIReady() {
   }
 
   /**
-   * Called when video zone becomes active — fetch playlist and start playing.
+   * Called when video zone becomes active — fetch playlist and reels, start playing.
+   * Two-phase logic: YouTube first (with audio), then Reels (muted) as fallback.
    */
   function onVideoZoneActive() {
     videoZoneActive = true;
+    youtubeComplete = false;
 
-    fetch('/api/videos')
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        videoPlaylist = data.videos || [];
+    // Fetch both videos and reels in parallel
+    Promise.all([
+      fetch('/api/videos').then(function (res) { return res.json(); }),
+      fetch('/api/reels').then(function (res) { return res.json(); })
+    ])
+      .then(function (results) {
+        var videoData = results[0];
+        var reelsData = results[1];
+
+        videoPlaylist = videoData.videos || [];
         videoIndex = 0;
+        reelsList = reelsData.reels || [];
+        reelsEnabled = reelsData.enabled || false;
 
         // Reset server-side playlist index
         fetch('/api/videos/reset', { method: 'POST' });
 
-        if (videoPlaylist.length === 0) {
-          // No videos configured — show fallback
+        var hasYouTube = videoPlaylist.length > 0;
+        var hasReels = reelsEnabled && reelsList.length > 0;
+
+        if (hasYouTube) {
+          // Phase 1: Show YouTube player, start playlist
+          showVideoElement('yt-player');
+          hideVideoElement('video-no-content');
+          hideReelsPlayer();
+
+          var firstVideo = videoPlaylist[0];
+          console.log('YouTube started: ' + videoPlaylist.length + ' videos');
+          if (youtubeReady && ytPlayer) {
+            ytPlayer.loadVideoById(firstVideo.videoId);
+          } else {
+            console.warn('YouTube player not ready yet, waiting...');
+          }
+        } else if (hasReels) {
+          // No YouTube, go straight to Reels
+          console.log('No YouTube videos, starting Reels directly: ' + reelsList.length + ' reels');
+          showReelsPlayer();
+          startReelsPlayback();
+        } else {
+          // No content at all
           showVideoElement('video-no-content');
           hideVideoElement('yt-player');
+          hideReelsPlayer();
           console.log('No videos configured, showing fallback');
-          // With no videos, let the fallback timer handle zone advancement
-          return;
-        }
-
-        // Show player, hide fallback
-        showVideoElement('yt-player');
-        hideVideoElement('video-no-content');
-
-        // Start first video
-        var firstVideo = videoPlaylist[0];
-        console.log('Starting YouTube playlist: ' + videoPlaylist.length + ' videos');
-        if (youtubeReady && ytPlayer) {
-          ytPlayer.loadVideoById(firstVideo.videoId);
-        } else {
-          console.warn('YouTube player not ready yet, waiting...');
         }
       })
       .catch(function (err) {
-        console.error('Failed to fetch video playlist:', err);
+        console.error('Failed to fetch video/reels data:', err);
         showVideoElement('video-no-content');
         hideVideoElement('yt-player');
+        hideReelsPlayer();
       });
   }
 
   /**
-   * Called when video zone becomes inactive — pause player.
+   * Called when video zone becomes inactive — pause players.
    */
   function onVideoZoneInactive() {
     videoZoneActive = false;
+    youtubeComplete = false;
+
+    // Pause YouTube
     if (ytPlayer && youtubeReady) {
       try {
         ytPlayer.pauseVideo();
@@ -134,6 +164,9 @@ function onYouTubeIframeAPIReady() {
         // Player may not be in a state to pause
       }
     }
+
+    // Pause Reels
+    hideReelsPlayer();
   }
 
   /**
@@ -150,9 +183,17 @@ function onYouTubeIframeAPIReady() {
         ytPlayer.loadVideoById(nextVideo.videoId);
       }
     } else {
-      // Playlist exhausted — signal zone complete
+      // Playlist exhausted — check if Reels are available
       console.log('YouTube playlist complete');
-      signalVideoZoneComplete();
+      var hasReels = reelsEnabled && reelsList.length > 0;
+      if (hasReels) {
+        console.log('YouTube complete, switching to Reels');
+        youtubeComplete = true;
+        showReelsPlayer();
+        startReelsPlayback();
+      } else {
+        signalVideoZoneComplete();
+      }
     }
   }
 
@@ -199,6 +240,101 @@ function onYouTubeIframeAPIReady() {
     var el = document.getElementById(elementId);
     if (el) {
       el.classList.add('hidden');
+    }
+  }
+
+  /**
+   * Initialize the Reels player and attach event listeners.
+   */
+  function initReelsPlayer() {
+    var video = document.getElementById('reels-player');
+    if (!video) return;
+
+    video.addEventListener('ended', function () {
+      if (!videoZoneActive) return;
+
+      // Check if minimum display time has been reached
+      if (reelsMinReached) {
+        console.log('Reels min display reached, advancing zone');
+        signalVideoZoneComplete();
+      } else {
+        playNextReel();
+      }
+    });
+  }
+
+  /**
+   * Play the next reel in the list (wraps around).
+   */
+  function playNextReel() {
+    if (reelsList.length === 0) return;
+
+    currentReelIndex = (currentReelIndex + 1) % reelsList.length;
+    var reel = reelsList[currentReelIndex];
+    var video = document.getElementById('reels-player');
+    if (!video) return;
+
+    video.src = '/api/reels/files/' + reel.filename;
+    var playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(function (err) {
+        console.error('Reel play failed:', err.message);
+        // Try next reel after a short delay
+        if (reelsList.length > 1) {
+          setTimeout(playNextReel, 500);
+        }
+      });
+    }
+  }
+
+  /**
+   * Start playing reels from the beginning of the list.
+   */
+  function startReelsPlayback() {
+    if (reelsList.length === 0) return;
+
+    currentReelIndex = 0;
+    reelsStartTime = Date.now();
+    reelsMinReached = false;
+
+    var reel = reelsList[0];
+    var video = document.getElementById('reels-player');
+    if (!video) return;
+
+    video.src = '/api/reels/files/' + reel.filename;
+    var playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(function (err) {
+        console.error('Reel play failed:', err.message);
+      });
+    }
+
+    // Set timer for minimum display duration
+    var minMs = (reelsMinDisplaySeconds || 30) * 1000;
+    setTimeout(function () {
+      reelsMinReached = true;
+      console.log('Reels minimum display time reached (' + reelsMinDisplaySeconds + 's)');
+    }, minMs);
+  }
+
+  /**
+   * Show the Reels player, hide YouTube player.
+   */
+  function showReelsPlayer() {
+    hideVideoElement('yt-player');
+    hideVideoElement('video-no-content');
+    showVideoElement('reels-player');
+  }
+
+  /**
+   * Hide and pause the Reels player.
+   */
+  function hideReelsPlayer() {
+    hideVideoElement('reels-player');
+    var video = document.getElementById('reels-player');
+    if (video) {
+      video.pause();
+      video.removeAttribute('src');
     }
   }
 
@@ -294,6 +430,10 @@ function onYouTubeIframeAPIReady() {
 
         // Update play_full setting
         videoPlayFull = !!(zones.video && zones.video.play_full);
+
+        // Update Instagram settings
+        var ig = config.instagram || {};
+        reelsMinDisplaySeconds = ig.min_display_seconds || 30;
       })
       .catch(function (err) {
         console.error('Config fetch failed:', err);
@@ -493,6 +633,13 @@ function onYouTubeIframeAPIReady() {
 
         // Read play_full setting
         videoPlayFull = !!(zones.video && zones.video.play_full);
+
+        // Read Instagram settings
+        var ig = config.instagram || {};
+        reelsMinDisplaySeconds = ig.min_display_seconds || 30;
+
+        // Initialize Reels player
+        initReelsPlayer();
 
         // Initialize WOD display management
         initWod();
