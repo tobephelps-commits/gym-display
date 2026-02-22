@@ -1,0 +1,20 @@
+# Logrotate configuration for gym-display file-based logs
+#
+# Primary logging goes through systemd journal (stdout/stderr).
+# setup.sh should configure journald size limits by creating
+# /etc/systemd/journald.conf.d/gym-display.conf with:
+#   [Journal]
+#   SystemMaxUse=100M
+#   MaxRetentionSec=7day
+#
+# This logrotate config handles any file-based logs.
+
+/home/pi/gym-display/logs/*.log {
+    daily
+    missingok
+    rotate 7
+    compress
+    delaycompress
+    notifempty
+    create 0640 pi pi
+}
