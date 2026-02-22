@@ -56,7 +56,9 @@ app.get('/api/config', (req, res) => {
 
 // Zone API endpoints
 app.get('/api/zones/current', (req, res) => {
-  res.json(zoneController.getZoneState());
+  const state = zoneController.getZoneState();
+  state.boostActive = zoneController.isBoostActive();
+  res.json(state);
 });
 
 app.post('/api/zones/advance', (req, res) => {
@@ -182,6 +184,15 @@ const server = app.listen(port, '0.0.0.0', () => {
   try {
     mindbodyClient.startPolling();
     console.log('[Server] MindBody polling started');
+
+    // Periodic boost check — only if MindBody is configured
+    if (mindbodyClient.getStatus().configured) {
+      setInterval(() => {
+        const schedule = mindbodyClient.getSchedule();
+        zoneController.checkBoost(schedule);
+      }, 30000);
+      console.log('[Server] Boost check interval started (every 30s)');
+    }
   } catch (err) {
     console.error(`[Server] MindBody initialization failed (non-fatal): ${err.message}`);
   }
