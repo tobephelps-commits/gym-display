@@ -45,7 +45,7 @@ Progress: █████████░ 90%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Server binds to 0.0.0.0 for dev (will lock to 127.0.0.1 in deployment phase)
+- Server binds 127.0.0.1 in production, 0.0.0.0 in dev (implemented in 05-01)
 - Frontend uses 30s polling for config updates (simpler than WebSocket for config changes)
 - Zone controller is singleton — single source of truth for rotation state
 - puppeteer-core (not puppeteer) for ARM64 Pi compatibility
