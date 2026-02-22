@@ -21,7 +21,7 @@ None
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Express server, config loading, zone rotation engine with crossfade transitions
-- [ ] **Phase 2: WOD Display** - Puppeteer WodScreen automation, screenshot caching, WOD zone rendering
+- [x] **Phase 2: WOD Display** - Puppeteer WodScreen automation, screenshot caching, WOD zone rendering
 - [ ] **Phase 3: Video System** - Video manager, URL parsing, iframe embedding, playlist advancement
 - [ ] **Phase 4: MindBody Integration** - API client, auth token management, roster UI, class-aware boost
 - [ ] **Phase 5: Deployment & Reliability** - systemd services, kiosk launcher, HDMI CEC, setup script
@@ -51,7 +51,7 @@ Plans:
 
 Plans:
 - [x] 02-01: Puppeteer WodScreen automation — login, navigate, screenshot capture
-- [ ] 02-02: WOD API endpoint, frontend zone integration, stale-data indicator
+- [x] 02-02: WOD API endpoint, frontend zone integration, stale-data indicator
 
 #### Phase 3: Video System
 **Goal**: Video manager with YouTube/Vimeo URL parsing, playlist rotation, iframe embedding with autoplay, completion detection, and config hot-reload
@@ -94,7 +94,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Foundation | v1.0 | 2/2 | Complete | 2026-02-21 |
-| 2. WOD Display | v1.0 | 1/2 | In progress | - |
+| 2. WOD Display | v1.0 | 2/2 | Complete | 2026-02-22 |
 | 3. Video System | v1.0 | 0/2 | Not started | - |
 | 4. MindBody Integration | v1.0 | 0/3 | Not started | - |
 | 5. Deployment & Reliability | v1.0 | 0/3 | Not started | - |
