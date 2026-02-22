@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The three-zone rotation (WOD, video, roster) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** v1.0 MVP — Phase 1 Foundation
+**Current focus:** v1.0 MVP — Phase 2 WOD Display
 
 ## Current Position
 
 Milestone: v1.0 MVP
-Phase: 1 of 5 (Foundation)
-Plan: 01-02 complete
-Status: Plan 01-02 executed — zone rotation system with frontend crossfade and backend controller operational
-Last activity: 2026-02-21 — Plan 01-02 completed (2 tasks)
+Phase: 2 of 5 (WOD Display)
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-02-22 — Completed 02-01-PLAN.md
 
-Progress: ██░░░░░░░░ 20%
+Progress: ███░░░░░░░ 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: ~5 min
+- Total plans completed: 3
+- Average duration: ~4 min
 - Total execution time: ~0.2 hours
 
 **By Phase:**
@@ -29,9 +29,10 @@ Progress: ██░░░░░░░░ 20%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 2 | ~10 min | ~5 min |
+| 02-wod-display | 1 | ~3 min | ~3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-02
+- Last 5 plans: 01-01, 01-02, 02-01
 - Trend: Steady
 
 ## Accumulated Context
@@ -45,6 +46,9 @@ Recent decisions affecting current work:
 - Frontend uses 30s polling for config updates (simpler than WebSocket for config changes)
 - Zone controller is singleton — single source of truth for rotation state
 - Video zone uses fallback_seconds for duration until Phase 3 video player
+- puppeteer-core (not puppeteer) for ARM64 Pi compatibility
+- WodScraper init is best-effort — server runs even if WodScreen fails
+- Daily 4 AM re-login to ensure fresh WOD
 
 ### Pending Todos
 
@@ -56,9 +60,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Plan 01-02 complete — ready for plan 01-03
-Resume file: .planning/phases/01-foundation/01-02-SUMMARY.md
+Last session: 2026-02-22
+Stopped at: Completed 02-01-PLAN.md — ready for 02-02
+Resume file: .planning/phases/02-wod-display/02-01-SUMMARY.md
 
 ### Roadmap Evolution
 

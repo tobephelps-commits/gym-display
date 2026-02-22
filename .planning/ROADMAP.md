@@ -50,7 +50,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 02-01: Puppeteer WodScreen automation — login, navigate, screenshot capture
+- [x] 02-01: Puppeteer WodScreen automation — login, navigate, screenshot capture
 - [ ] 02-02: WOD API endpoint, frontend zone integration, stale-data indicator
 
 #### Phase 3: Video System
@@ -94,7 +94,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Foundation | v1.0 | 2/2 | Complete | 2026-02-21 |
-| 2. WOD Display | v1.0 | 0/2 | Not started | - |
+| 2. WOD Display | v1.0 | 1/2 | In progress | - |
 | 3. Video System | v1.0 | 0/2 | Not started | - |
 | 4. MindBody Integration | v1.0 | 0/3 | Not started | - |
 | 5. Deployment & Reliability | v1.0 | 0/3 | Not started | - |
