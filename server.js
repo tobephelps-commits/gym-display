@@ -7,6 +7,7 @@ configLoader.loadConfig();
 configLoader.startWatching();
 
 const zoneController = require('./services/zone-controller');
+const videoManager = require('./services/video-manager');
 const wodScraper = require('./services/wod-scraper');
 const { createWodProxy } = require('./services/wod-proxy');
 
@@ -52,6 +53,23 @@ app.get('/api/zones/current', (req, res) => {
 app.post('/api/zones/advance', (req, res) => {
   const state = zoneController.advanceZone();
   res.json(state);
+});
+
+// Video API endpoints
+app.get('/api/videos', (req, res) => {
+  res.json({
+    videos: videoManager.getPlaylist(),
+    count: videoManager.getVideoCount()
+  });
+});
+
+app.post('/api/videos/reset', (req, res) => {
+  videoManager.resetPlaylist();
+  res.json({
+    message: 'Playlist reset',
+    videos: videoManager.getPlaylist(),
+    count: videoManager.getVideoCount()
+  });
 });
 
 // WOD API endpoints
