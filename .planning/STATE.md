@@ -5,37 +5,37 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The three-zone rotation (WOD, video, roster) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** v1.0 MVP — Phase 5 Deployment & Reliability
+**Current focus:** v1.0 MVP — UAT Fix Pass
 
 ## Current Position
 
 Milestone: v1.0 MVP
-Phase: 5 of 5 (Deployment & Reliability)
-Plan: 3 of 3 in current phase
-Status: Plan complete — Phase 5 COMPLETE — v1.0 MVP COMPLETE
-Last activity: 2026-02-22 — Completed 05-03-PLAN.md
+Phase: 02-wod-display (UAT fix)
+Plan: 02-FIX (fix UAT-001)
+Status: Plan complete — UAT-001 fixed
+Last activity: 2026-02-22 — Completed 02-FIX (WOD authorization popup fix)
 
 Progress: ██████████ 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: ~3 min
-- Total execution time: ~0.5 hours
+- Total execution time: ~0.6 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation | 2 | ~10 min | ~5 min |
-| 02-wod-display | 2 | ~4 min | ~2 min |
+| 02-wod-display | 3 | ~9 min | ~3 min |
 | 03-video-system | 2 | ~6 min | ~3 min |
 | 04-mindbody-integration | 3 | ~11 min | ~3.5 min |
 | 05-deployment-reliability | 3 | ~8 min | ~2.7 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-03, 05-01, 05-02, 05-03
+- Last 5 plans: 05-01, 05-02, 05-03, 02-FIX
 - Trend: Steady
 
 ## Accumulated Context
@@ -75,6 +75,9 @@ Recent decisions affecting current work:
 - SUDO_USER detection in setup.sh for non-pi username support
 - setup.sh sed-replaces /home/pi and User=pi in systemd units at install time
 - Missing app directory is a warning in setup.sh (can run before git clone)
+- Iframe is "bonus" display mode; screenshot is the reliable WOD path
+- Gym auth detection uses text content matching (defensive, not exact selectors)
+- Screenshot refresh runs as backup even when iframe is active
 
 ### Pending Todos
 
@@ -87,8 +90,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 05-03-PLAN.md — Comprehensive Pi provisioning script (v1.0 MVP COMPLETE)
-Resume file: .planning/phases/05-deployment-reliability/05-03-SUMMARY.md
+Stopped at: Completed 02-FIX — Fixed UAT-001 WOD authorization popup (4 root causes)
+Resume file: .planning/phases/02-wod-display/02-FIX-SUMMARY.md
 
 ### Roadmap Evolution
 
