@@ -24,7 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: WOD Display** - Puppeteer WodScreen automation, screenshot caching, WOD zone rendering
 - [x] **Phase 3: Video System** - Video manager, URL parsing, iframe embedding, playlist advancement
 - [x] **Phase 4: MindBody Integration** - API client, auth token management, roster UI, class-aware boost
-- [ ] **Phase 5: Deployment & Reliability** - systemd services, kiosk launcher, HDMI CEC, setup script
+- [ ] **Phase 5: Deployment & Reliability** - systemd services, kiosk launcher, HDMI CEC (9pm–4:30am), RPi Connect, setup script
 
 ## Phase Details
 
@@ -76,15 +76,15 @@ Plans:
 - [x] 04-03: Class-aware rotation boosting in zone controller
 
 #### Phase 5: Deployment & Reliability
-**Goal**: Production-ready deployment with systemd auto-start, Chromium kiosk launcher, HDMI CEC off-hours control, setup script, and log rotation
+**Goal**: Production-ready deployment with systemd auto-start, Chromium kiosk launcher, HDMI CEC off-hours screen control (9pm–4:30am), Raspberry Pi Connect for remote management, setup script, and log rotation
 **Depends on**: Phases 1-4
-**Research**: Unlikely (systemd, HDMI CEC, Chromium kiosk — established Linux patterns)
+**Research**: Unlikely (systemd, HDMI CEC, Chromium kiosk — established Linux patterns; Raspberry Pi Connect docs are straightforward)
 **Plans**: TBD
 
 Plans:
-- [ ] 05-01: systemd service files and Chromium kiosk launcher script
-- [ ] 05-02: HDMI CEC off-hours TV control and log rotation
-- [ ] 05-03: Automated setup script (setup.sh) for Raspberry Pi OS provisioning
+- [ ] 05-01: systemd service files, Chromium kiosk launcher script, production server binding
+- [ ] 05-02: HDMI CEC off-hours TV control (9pm off / 4:30am on) and log rotation
+- [ ] 05-03: Automated setup script (setup.sh) with RPi Connect for Raspberry Pi OS provisioning
 
 ## Progress
 
