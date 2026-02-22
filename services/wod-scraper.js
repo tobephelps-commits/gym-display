@@ -7,6 +7,8 @@ class WodScraper {
     this.browser = null;
     this.page = null;
     this.cookies = [];
+    this.localStorage = {};
+    this.renderedHtml = null;
     this.lastScreenshot = null;
     this.lastScreenshotTime = null;
     this.status = 'idle';
@@ -83,6 +85,12 @@ class WodScraper {
 
   /**
    * Log into WodScreen and navigate to the daily WOD page.
+   *
+   * Auth flow (verified via Playwright):
+   *   1. Navigate to wodscreen.com/launch/index.html
+   *   2. Click "Authorize" in welcome modal → redirects to beyondthewhiteboard.com/signin
+   *   3. Fill email/password on btwb, click "Sign In" → redirects back to wodscreen.com
+   *   4. Click "Daily WOD" on screen selection page → shows the workout
    */
   async login() {
     if (!this.page) {
@@ -104,19 +112,43 @@ class WodScraper {
     }
 
     try {
+      // Step 1: Navigate to WodScreen launch page
       console.log(`[WodScraper] Navigating to ${url}/launch/index.html`);
       await this.page.goto(`${url}/launch/index.html`, {
         waitUntil: 'networkidle2',
         timeout: 30000,
       });
 
-      // Wait for login form — try common patterns since exact selectors are unknown
-      console.log('[WodScraper] Waiting for login form...');
+      // Step 2: Handle "Authorize" modal if present
+      // WodScreen shows "Welcome to WODScreen! Click the button below to authorize WODScreen to access your gym."
+      // Clicking Authorize redirects to beyondthewhiteboard.com/signin
+      console.log('[WodScraper] Looking for AUTHORIZE modal...');
+      const authClicked = await this._clickElementByText(
+        ['authorize'],
+        'button, a, [role="button"], .btn, input[type="button"]',
+        10000
+      );
+      if (authClicked) {
+        console.log('[WodScraper] Clicked AUTHORIZE button, waiting for redirect...');
+        await this.page.waitForNavigation({
+          waitUntil: 'networkidle2',
+          timeout: 15000,
+        }).catch(() => {
+          console.log('[WodScraper] No navigation after Authorize — checking page state');
+        });
+        await this._sleep(2000);
+      } else {
+        console.log('[WodScraper] No AUTHORIZE modal found — continuing');
+      }
+
+      // Step 3: Check if we're on a login page (btwb redirects to /signin)
+      const currentUrl = this.page.url();
+      console.log(`[WodScraper] Current URL after authorize: ${currentUrl}`);
+
       const usernameSelector = await this._findSelector([
         'input[type="email"]',
         'input[name="email"]',
         'input[name="username"]',
-        'input[type="text"]',
         '#email',
         '#username',
       ]);
@@ -127,120 +159,110 @@ class WodScraper {
         '#password',
       ]);
 
-      if (!usernameSelector || !passwordSelector) {
-        console.error('[WodScraper] Could not find login form elements');
-        this.status = 'error';
-        await this.captureScreenshot(); // Capture state for debugging
-        return;
-      }
+      if (usernameSelector && passwordSelector) {
+        console.log('[WodScraper] Login form found — entering credentials...');
 
-      // Clear and fill username
-      await this.page.click(usernameSelector);
-      await this.page.evaluate((sel) => { document.querySelector(sel).value = ''; }, usernameSelector);
-      await this.page.type(usernameSelector, username, { delay: 50 });
+        // Clear and fill username
+        await this.page.click(usernameSelector);
+        await this.page.evaluate((sel) => { document.querySelector(sel).value = ''; }, usernameSelector);
+        await this.page.type(usernameSelector, username, { delay: 50 });
 
-      // Clear and fill password
-      await this.page.click(passwordSelector);
-      await this.page.evaluate((sel) => { document.querySelector(sel).value = ''; }, passwordSelector);
-      await this.page.type(passwordSelector, password, { delay: 50 });
+        // Clear and fill password
+        await this.page.click(passwordSelector);
+        await this.page.evaluate((sel) => { document.querySelector(sel).value = ''; }, passwordSelector);
+        await this.page.type(passwordSelector, password, { delay: 50 });
 
-      // Find and click submit button
-      const submitSelector = await this._findSelector([
-        'button[type="submit"]',
-        'input[type="submit"]',
-        'button:not([type])',
-        '.login-button',
-        '.btn-login',
-        '.submit',
-      ]);
+        // Find and click submit button
+        const submitSelector = await this._findSelector([
+          'button[type="submit"]',
+          'input[type="submit"]',
+          'button:not([type])',
+          '.login-button',
+          '.btn-login',
+          '.submit',
+        ]);
 
-      if (submitSelector) {
-        await this.page.click(submitSelector);
-      } else {
-        // Fallback: press Enter
-        await this.page.keyboard.press('Enter');
-      }
+        if (submitSelector) {
+          await this.page.click(submitSelector);
+        } else {
+          await this.page.keyboard.press('Enter');
+        }
 
-      // Wait for navigation after login
-      console.log('[WodScraper] Waiting for post-login navigation...');
-      await this.page.waitForNavigation({
-        waitUntil: 'networkidle2',
-        timeout: 15000,
-      }).catch(() => {
-        // Some SPAs don't trigger navigation — wait for content change instead
-        console.log('[WodScraper] No navigation detected — checking for content change');
-      });
-
-      // Wait a moment for React SPA to settle
-      await this._sleep(3000);
-
-      // Look for the daily WOD launch button and click it
-      console.log('[WodScraper] Looking for daily WOD launch button...');
-      const launchButton = await this._findClickableElement([
-        'button',
-        'a.btn',
-        '.launch-button',
-        '[data-testid*="launch"]',
-        '[data-testid*="wod"]',
-        '.wod-button',
-      ]);
-
-      if (launchButton) {
-        await this.page.click(launchButton);
-        console.log('[WodScraper] Clicked launch button, waiting for WOD page...');
-        await this._sleep(5000);
-      } else {
-        console.log('[WodScraper] No explicit launch button found — may already be on WOD page');
-      }
-
-      // Look for gym authorization / selection step (WodScreen two-step auth)
-      console.log('[WodScraper] Looking for gym authorization...');
-      try {
-        const gymAuthElement = await this.page.evaluate(() => {
-          const keywords = ['authorize', 'select gym', 'choose', 'continue', 'select box', 'gym'];
-          const clickable = document.querySelectorAll('button, a, [role="button"], .btn');
-          for (const el of clickable) {
-            const text = (el.textContent || '').toLowerCase().trim();
-            const style = window.getComputedStyle(el);
-            const visible = style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
-            if (visible && keywords.some(kw => text.includes(kw))) {
-              // Return a unique selector path for this element
-              el.setAttribute('data-wod-auth-click', 'true');
-              return true;
-            }
-          }
-          return false;
+        // Wait for navigation back to WodScreen after login
+        console.log('[WodScraper] Waiting for post-login redirect to WodScreen...');
+        await this.page.waitForNavigation({
+          waitUntil: 'networkidle2',
+          timeout: 30000,
+        }).catch(() => {
+          console.log('[WodScraper] No navigation detected after login submit');
         });
 
-        if (gymAuthElement) {
-          await this.page.click('[data-wod-auth-click="true"]');
-          console.log('[WodScraper] Clicked gym authorization element, waiting for page to settle...');
-          await this._sleep(5000);
-        } else {
-          console.log('[WodScraper] No gym authorization prompt found — continuing');
-        }
-      } catch (authErr) {
-        console.log(`[WodScraper] Gym authorization step skipped: ${authErr.message}`);
+        await this._sleep(3000);
+        console.log(`[WodScraper] Post-login URL: ${this.page.url()}`);
+      } else {
+        console.log('[WodScraper] No login form found — may already be authenticated');
+        await this._sleep(2000);
+      }
+
+      // Step 4: Select the "Daily WOD" screen if screen selection page is shown
+      // The screen selection is a list of cards. Each card has a text label and a button.
+      // We need to find the list item containing "Daily WOD" and click its button.
+      console.log('[WodScraper] Looking for Daily WOD screen selection...');
+      const wodScreenClicked = await this._clickButtonInParent(
+        'daily wod',
+        10000
+      );
+      if (wodScreenClicked) {
+        console.log('[WodScraper] Selected Daily WOD screen, waiting for content...');
+        await this._sleep(5000);
+      } else {
+        console.log('[WodScraper] No screen selection found — may already be on WOD page');
       }
 
       // Store the resulting page URL as relative pathname (for use with /wod-proxy)
       this.wodPageUrl = new URL(this.page.url()).pathname;
       console.log(`[WodScraper] WOD page URL: ${this.wodPageUrl}`);
 
-      // Extract and store cookies (explicitly request for www.wodscreen.com domain)
-      this.cookies = await this.page.cookies('https://www.wodscreen.com');
-      console.log(`[WodScraper] Stored ${this.cookies.length} cookies`);
+      // Extract cookies from both WodScreen and btwb domains (auth spans both)
+      const wodCookies = await this.page.cookies('https://www.wodscreen.com');
+      const btwbCookies = await this.page.cookies('https://www.beyondthewhiteboard.com');
+      this.cookies = [...wodCookies, ...btwbCookies];
+      console.log(`[WodScraper] Stored ${this.cookies.length} cookies (${wodCookies.length} WodScreen + ${btwbCookies.length} btwb)`);
 
-      // Capture initial screenshot
-      await this.captureScreenshot();
+      // Extract localStorage from WodScreen page (SPA stores auth tokens here)
+      this.localStorage = await this.page.evaluate(() => {
+        const data = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          data[key] = localStorage.getItem(key);
+        }
+        return data;
+      });
+      console.log(`[WodScraper] Extracted ${Object.keys(this.localStorage).length} localStorage entries`);
 
-      this.status = 'ready';
-      console.log('[WodScraper] Login complete — status: ready');
+      // Extract fully-rendered HTML for iframe display
+      await this._captureRenderedHtml();
+      console.log(`[WodScraper] Rendered HTML captured (${this.renderedHtml ? this.renderedHtml.length : 0} bytes)`);
+
+      // Signal cookies-ready immediately so frontend can start iframe
+      this.status = 'cookies-ready';
+      console.log('[WodScraper] Cookies acquired — status: cookies-ready');
+
+      // Capture initial screenshot in background (don't block on it)
+      this.captureScreenshot().then(() => {
+        this.status = 'ready';
+        console.log('[WodScraper] Screenshot captured — status: ready');
+      }).catch((err) => {
+        // Still set ready — cookies are the important part
+        this.status = 'ready';
+        console.error(`[WodScraper] Background screenshot failed: ${err.message}`);
+      });
     } catch (err) {
       this.status = 'error';
       console.error(`[WodScraper] Login failed: ${err.message}`);
-      // Keep lastScreenshot if available — don't null it out
-      await this.captureScreenshot().catch(() => {});
+      // Clear screenshot so frontend doesn't display the auth/error page
+      this.lastScreenshot = null;
+      this.lastScreenshotTime = null;
     }
   }
 
@@ -287,6 +309,77 @@ class WodScraper {
   }
 
   /**
+   * Find and click the first visible element matching any keyword in its text content.
+   * Waits up to timeoutMs for a matching element to appear.
+   * @returns {boolean} true if an element was clicked
+   */
+  async _clickElementByText(keywords, selectorList, timeoutMs = 5000) {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeoutMs) {
+      try {
+        const clicked = await this.page.evaluate((kws, selectors) => {
+          const elements = document.querySelectorAll(selectors);
+          for (const el of elements) {
+            const text = (el.textContent || '').toLowerCase().trim();
+            const style = window.getComputedStyle(el);
+            const visible = style.display !== 'none' &&
+                            style.visibility !== 'hidden' &&
+                            style.opacity !== '0' &&
+                            el.offsetParent !== null;
+            if (visible && kws.some(kw => text.includes(kw))) {
+              el.click();
+              return true;
+            }
+          }
+          return false;
+        }, keywords, selectorList);
+
+        if (clicked) return true;
+      } catch (e) {
+        // Page might be navigating — retry
+      }
+      await this._sleep(500);
+    }
+    return false;
+  }
+
+  /**
+   * Find a list item or card containing the given text keyword, then click
+   * the button inside it. Handles WodScreen's screen selection UI where
+   * the clickable button is a child of the card, not the text itself.
+   * @returns {boolean} true if a button was clicked
+   */
+  async _clickButtonInParent(keyword, timeoutMs = 5000) {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeoutMs) {
+      try {
+        const clicked = await this.page.evaluate((kw) => {
+          // Find all list items and card-like containers
+          const containers = document.querySelectorAll('li, [class*="card"], [class*="Card"]');
+          for (const container of containers) {
+            const text = (container.textContent || '').toLowerCase();
+            if (text.includes(kw)) {
+              // Found the container with our keyword — click its button
+              const btn = container.querySelector('button, [role="button"], a[href]');
+              if (btn) {
+                btn.click();
+                return true;
+              }
+            }
+          }
+          return false;
+        }, keyword);
+
+        if (clicked) return true;
+      } catch (e) {
+        // Page might be navigating — retry
+      }
+      await this._sleep(500);
+    }
+    return false;
+  }
+
+  /**
    * Capture a JPEG screenshot of the current page.
    */
   async captureScreenshot() {
@@ -326,6 +419,7 @@ class WodScraper {
       try {
         if (this.status === 'ready' && this.page) {
           await this.captureScreenshot();
+          await this._captureRenderedHtml();
 
           // Validate session — check if we're still on a WOD page (not redirected to login)
           const currentUrl = this.page.url();
@@ -397,6 +491,55 @@ class WodScraper {
   }
 
   /**
+   * Return localStorage data extracted from the authenticated WodScreen page.
+   */
+  getLocalStorage() {
+    return this.localStorage || {};
+  }
+
+  /**
+   * Return rendered HTML of the WOD page (pre-authenticated, static snapshot).
+   */
+  getRenderedHtml() {
+    return this.renderedHtml;
+  }
+
+  /**
+   * Extract the fully-rendered WOD page HTML from the browser.
+   * Inlines computed styles and removes scripts to create a self-contained snapshot.
+   */
+  async _captureRenderedHtml() {
+    if (!this.page) return;
+    try {
+      this.renderedHtml = await this.page.evaluate(() => {
+        return document.documentElement.outerHTML;
+      });
+
+      // Post-process: make resource URLs absolute and strip scripts
+      if (this.renderedHtml) {
+        // Remove all <script> tags (we want a static display, no SPA re-init)
+        this.renderedHtml = this.renderedHtml.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
+        // Inject base href, hide options sidebar, and clean up display for iframe
+        const displayCss = [
+          'body{margin:0;overflow:hidden;}',
+          // Hide the settings/options panel (appears as a right-side drawer)
+          '[class*="etting"],[class*="ptions"],[class*="idebar"],[class*="rawer"]{display:none!important;}',
+          // Hide the settings gear button (bottom-left)
+          'footer~div,div[style*="position: fixed"]{display:none!important;}',
+        ].join('');
+
+        this.renderedHtml = '<!DOCTYPE html><html>' +
+          this.renderedHtml.replace(/<head>/i,
+            '<head><base href="https://www.wodscreen.com/">' +
+            `<style>${displayCss}</style>`);
+      }
+    } catch (err) {
+      console.error(`[WodScraper] Failed to capture rendered HTML: ${err.message}`);
+    }
+  }
+
+  /**
    * Return current scraper status.
    */
   getStatus() {
@@ -405,6 +548,7 @@ class WodScraper {
       wodPageUrl: this.wodPageUrl,
       lastScreenshotTime: this.lastScreenshotTime,
       cookieCount: this.cookies ? this.cookies.length : 0,
+      hasCookies: !!(this.cookies && this.cookies.length > 0),
     };
   }
 

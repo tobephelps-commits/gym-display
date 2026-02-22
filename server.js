@@ -20,7 +20,10 @@ const app = express();
 app.use(express.json());
 
 // Mount WodScreen reverse proxy — strips iframe-blocking headers, injects session cookies
-app.use('/wod-proxy', createWodProxy(() => wodScraper.getCookieString()));
+app.use('/wod-proxy', createWodProxy(
+  () => wodScraper.getCookieString(),
+  () => wodScraper.getLocalStorage()
+));
 
 // Serve static files from public/
 app.use(express.static(path.join(__dirname, 'public')));
@@ -121,6 +124,17 @@ app.get('/api/reels/files/:filename', (req, res) => {
 // WOD API endpoints
 app.get('/api/wod/status', (req, res) => {
   res.json(wodScraper.getStatus());
+});
+
+app.get('/api/wod/rendered', (req, res) => {
+  const html = wodScraper.getRenderedHtml();
+  if (html) {
+    res.set('Content-Type', 'text/html');
+    res.set('Cache-Control', 'no-cache');
+    res.send(html);
+  } else {
+    res.status(503).json({ error: 'WOD content not yet available' });
+  }
 });
 
 app.get('/api/wod/screenshot', (req, res) => {

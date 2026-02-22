@@ -19,12 +19,10 @@ function onYouTubeIframeAPIReady() {
   let lastBoostActive = false;
 
   // WOD state
-  var wodMode = 'loading'; // 'loading' | 'iframe' | 'screenshot' | 'error'
+  var wodMode = 'loading'; // 'loading' | 'iframe' | 'error'
   var wodStatusPollTimer = null;
   var wodIframeLoaded = false;
   var wodLastStatus = null;
-  var wodScreenshotRefreshTimer = null;
-  var wodScraperReady = false;
 
   // Roster state
   var rosterPollTimer = null;
@@ -590,19 +588,13 @@ function onYouTubeIframeAPIReady() {
   }
 
   /**
-   * Attempt to load WOD via iframe. Falls back to screenshot on timeout/error.
-   * Only attempts iframe when scraper reports ready status.
+   * Load WOD via live iframe. This is the only WOD display mode —
+   * WODscreen must play live (videos, dynamic content) just like the video zone.
+   * Shows "Connecting..." until the scraper authenticates and the iframe loads.
    */
   function tryWodIframe(wodPageUrl) {
-    // Guard: only attempt iframe when scraper is confirmed ready
-    if (!wodScraperReady) {
-      console.log('WOD scraper not ready — skipping iframe, using screenshot');
-      tryWodScreenshot();
-      return;
-    }
-
     if (wodMode === 'iframe' && wodIframeLoaded) {
-      return; // already showing iframe successfully
+      return; // already showing live iframe
     }
 
     var iframe = document.getElementById('wod-iframe');
@@ -610,105 +602,68 @@ function onYouTubeIframeAPIReady() {
 
     wodIframeLoaded = false;
 
+    // If iframe doesn't load within 15s, stay on loading (poll will retry)
     var iframeTimeout = setTimeout(function () {
       if (!wodIframeLoaded) {
-        console.log('WOD iframe load timeout, falling back to screenshot');
-        tryWodScreenshot();
+        console.log('WOD iframe load timeout — will retry on next poll');
+        // Reset src so next poll attempt can retry
+        iframe.src = '';
+        wodMode = 'loading';
+        showWodElement('wod-loading');
       }
-    }, 10000);
+    }, 15000);
 
     iframe.onload = function () {
       clearTimeout(iframeTimeout);
-
-      // Validate: re-check scraper status before trusting iframe content
-      fetch('/api/wod/status')
-        .then(function (res) { return res.json(); })
-        .then(function (data) {
-          if (data.status === 'ready') {
-            wodIframeLoaded = true;
-            wodMode = 'iframe';
-            showWodElement('wod-iframe');
-            console.log('WOD iframe loaded and validated');
-            // Start screenshot refresh as backup in case iframe shows wrong content
-            startScreenshotRefresh();
-          } else {
-            console.log('WOD iframe loaded but scraper not ready — falling back to screenshot');
-            tryWodScreenshot();
-          }
-        })
-        .catch(function () {
-          // Can't verify — trust the iframe
-          wodIframeLoaded = true;
-          wodMode = 'iframe';
-          showWodElement('wod-iframe');
-          console.log('WOD iframe loaded (status check failed, trusting iframe)');
-        });
+      // Ignore the blank load when we clear src
+      if (!iframe.src || iframe.src === window.location.origin + '/' || iframe.src === 'about:blank') {
+        return;
+      }
+      wodIframeLoaded = true;
+      wodMode = 'iframe';
+      showWodElement('wod-iframe');
+      console.log('WOD iframe loaded — live content active');
     };
 
     iframe.onerror = function () {
       clearTimeout(iframeTimeout);
-      console.log('WOD iframe error, falling back to screenshot');
-      tryWodScreenshot();
+      console.log('WOD iframe error — will retry on next poll');
+      wodMode = 'loading';
+      showWodElement('wod-loading');
     };
 
-    // Set iframe src to the proxied WodScreen page
-    var proxyPath = '/wod-proxy' + (wodPageUrl || '/launch/index.html');
-    if (iframe.src !== window.location.origin + proxyPath) {
-      iframe.src = proxyPath;
+    // Set iframe src to the pre-rendered WOD HTML (bypasses SPA auth issues)
+    var renderedPath = '/api/wod/rendered';
+    if (iframe.src !== window.location.origin + renderedPath) {
+      iframe.src = renderedPath;
     }
   }
 
   /**
-   * Attempt to load WOD screenshot as fallback.
-   */
-  function tryWodScreenshot() {
-    var img = document.getElementById('wod-screenshot');
-    if (!img) return;
-
-    var screenshotUrl = '/api/wod/screenshot?t=' + Date.now();
-
-    img.onload = function () {
-      wodMode = 'screenshot';
-      showWodElement('wod-screenshot');
-      console.log('WOD screenshot loaded');
-    };
-
-    img.onerror = function () {
-      // No screenshot available either
-      wodMode = 'error';
-      showWodElement('wod-error');
-      console.log('WOD screenshot unavailable, showing error state');
-    };
-
-    img.src = screenshotUrl;
-  }
-
-  /**
-   * Poll WOD status and update display mode accordingly.
+   * Poll WOD status and update display accordingly.
+   * Only mode is live iframe — we wait for cookies, then load it.
+   * No screenshot fallback: WODscreen must be live to be useful.
    */
   function pollWodStatus() {
     fetch('/api/wod/status')
       .then(function (res) { return res.json(); })
       .then(function (data) {
-        console.log('WOD status:', data.status);
+        console.log('WOD status:', data.status, data.hasCookies ? '(cookies ready)' : '');
 
-        // Track scraper readiness for iframe guard
-        wodScraperReady = (data.status === 'ready');
-
-        if (data.status === 'ready' && data.wodPageUrl) {
-          if (wodLastStatus !== 'ready') {
-            // Status changed to ready, try iframe
+        if (data.hasCookies && data.wodPageUrl) {
+          // We have auth — load the live iframe
+          if (wodMode !== 'iframe' || !wodIframeLoaded) {
             tryWodIframe(data.wodPageUrl);
           }
-        } else if (data.status === 'ready') {
-          // Ready but no page URL, use screenshot
-          if (wodMode !== 'screenshot') {
-            tryWodScreenshot();
-          }
-        } else if (data.status === 'error' || data.status === 'idle' || data.status === 'no-credentials') {
-          // Not ready — fall back to screenshot (may have cached screenshot)
-          if (wodMode !== 'screenshot' && wodMode !== 'error') {
-            tryWodScreenshot();
+        } else if (data.status === 'no-credentials') {
+          // Can never connect — show error
+          wodMode = 'error';
+          showWodElement('wod-error');
+        } else {
+          // Still starting up (idle, launched, error with retry) — keep showing loading
+          if (wodMode !== 'iframe') {
+            wodMode = 'loading';
+            showWodElement('wod-loading');
           }
         }
 
@@ -716,68 +671,33 @@ function onYouTubeIframeAPIReady() {
       })
       .catch(function (err) {
         console.error('WOD status poll failed:', err);
-        // On network error, try screenshot if not already showing something
-        if (wodMode === 'loading') {
-          tryWodScreenshot();
-        }
       });
-  }
-
-  /**
-   * Start periodic screenshot refresh when in screenshot mode.
-   */
-  function startScreenshotRefresh() {
-    stopScreenshotRefresh();
-    wodScreenshotRefreshTimer = setInterval(function () {
-      if (wodMode === 'screenshot') {
-        var img = document.getElementById('wod-screenshot');
-        if (img) {
-          img.src = '/api/wod/screenshot?t=' + Date.now();
-        }
-      }
-    }, 60000);
-  }
-
-  /**
-   * Stop screenshot refresh timer.
-   */
-  function stopScreenshotRefresh() {
-    if (wodScreenshotRefreshTimer) {
-      clearInterval(wodScreenshotRefreshTimer);
-      wodScreenshotRefreshTimer = null;
-    }
   }
 
   /**
    * Initialize WOD display management.
    */
   function initWod() {
-    // Show loading state initially
     showWodElement('wod-loading');
     wodMode = 'loading';
 
-    // Start polling WOD status every 10 seconds
+    // Poll status every 10 seconds until iframe is live
     pollWodStatus();
     wodStatusPollTimer = setInterval(pollWodStatus, 10000);
   }
 
   /**
-   * Called when WOD zone becomes active — ensure display is current.
+   * Called when WOD zone becomes active — check status immediately.
    */
   function onWodZoneActive() {
-    // Trigger an immediate status check when WOD zone comes into view
     pollWodStatus();
-    // Start screenshot refresh if in screenshot mode
-    if (wodMode === 'screenshot') {
-      startScreenshotRefresh();
-    }
   }
 
   /**
-   * Called when WOD zone becomes inactive — pause refreshes.
+   * Called when WOD zone becomes inactive.
    */
   function onWodZoneInactive() {
-    stopScreenshotRefresh();
+    // Nothing to pause — iframe stays live in background
   }
 
   /**
