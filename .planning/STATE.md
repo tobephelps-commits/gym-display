@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 Milestone: v1.0 MVP
 Phase: 3 of 5 (Video System)
-Plan: 1 of 1 in current phase
+Plan: 2 of 2 in current phase
 Status: Plan complete
-Last activity: 2026-02-21 — Completed 03-01-PLAN.md
+Last activity: 2026-02-21 — Completed 03-02-PLAN.md
 
 Progress: ██████░░░░ 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: ~3 min
-- Total execution time: ~0.25 hours
+- Total execution time: ~0.3 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: ██████░░░░ 60%
 |-------|-------|-------|----------|
 | 01-foundation | 2 | ~10 min | ~5 min |
 | 02-wod-display | 2 | ~4 min | ~2 min |
-| 03-video-system | 1 | ~3 min | ~3 min |
+| 03-video-system | 2 | ~6 min | ~3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02, 02-01, 02-02, 03-01
+- Last 5 plans: 02-01, 02-02, 03-01, 03-02
 - Trend: Steady
 
 ## Accumulated Context
@@ -55,6 +55,9 @@ Recent decisions affecting current work:
 - play_full mode lets video completion drive zone transitions; fallback_seconds is safety net
 - Video manager is defensive against null config (handles pre-loadConfig state)
 - signalVideoZoneComplete syncs local rotation state with server to prevent drift
+- Token refresh stores new token in memory only (writing to config.yaml would trigger hot-reload loop)
+- Reels use object-fit:cover (vertical video fills horizontal display by cropping sides)
+- Reels zone advance on video ended event after min_display_seconds, not mid-playback
 
 ### Pending Todos
 
@@ -67,8 +70,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 03-01-PLAN.md — YouTube video system implemented
-Resume file: .planning/phases/03-video-system/03-01-SUMMARY.md
+Stopped at: Completed 03-02-PLAN.md — Instagram Reels integration with two-phase video zone
+Resume file: .planning/phases/03-video-system/03-02-SUMMARY.md
 
 ### Roadmap Evolution
 
