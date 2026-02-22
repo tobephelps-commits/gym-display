@@ -1,0 +1,9 @@
+[Unit]
+Description=Turn TV on at 4:30am
+
+[Timer]
+OnCalendar=*-*-* 04:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

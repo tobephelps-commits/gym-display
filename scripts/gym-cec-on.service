@@ -1,0 +1,7 @@
+[Unit]
+Description=Turn TV on via HDMI CEC
+
+[Service]
+Type=oneshot
+ExecStart=/home/pi/gym-display/scripts/hdmi-cec.sh on
+User=pi
