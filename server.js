@@ -8,6 +8,7 @@ configLoader.startWatching();
 
 const zoneController = require('./services/zone-controller');
 const videoManager = require('./services/video-manager');
+const reelsFetcher = require('./services/reels-fetcher');
 const wodScraper = require('./services/wod-scraper');
 const { createWodProxy } = require('./services/wod-proxy');
 
@@ -69,6 +70,36 @@ app.post('/api/videos/reset', (req, res) => {
     message: 'Playlist reset',
     videos: videoManager.getPlaylist(),
     count: videoManager.getVideoCount()
+  });
+});
+
+// Reels API endpoints
+app.get('/api/reels', (req, res) => {
+  res.json({
+    enabled: reelsFetcher.isEnabled(),
+    reels: reelsFetcher.getReelsList(),
+    status: reelsFetcher.getStatus()
+  });
+});
+
+app.get('/api/reels/files/:filename', (req, res) => {
+  const filename = req.params.filename;
+
+  // Path traversal prevention
+  if (!/^[a-zA-Z0-9_-]+\.mp4$/.test(filename)) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  const filePath = path.join(__dirname, 'cache', 'reels', filename);
+  res.sendFile(filePath, {
+    headers: {
+      'Content-Type': 'video/mp4',
+      'Accept-Ranges': 'bytes'
+    }
+  }, (err) => {
+    if (err && !res.headersSent) {
+      res.status(404).json({ error: 'Reel not found' });
+    }
   });
 });
 
