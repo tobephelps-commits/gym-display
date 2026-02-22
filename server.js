@@ -51,6 +51,11 @@ app.get('/api/config', (req, res) => {
     system: current.system || {}
   };
 
+  // Override rotation_order with the effective (possibly boosted) order from zone controller
+  const zoneState = zoneController.getZoneState();
+  sanitized.zones.rotation_order = zoneState.rotationOrder;
+  sanitized.zones.boostActive = zoneController.isBoostActive();
+
   res.json(sanitized);
 });
 

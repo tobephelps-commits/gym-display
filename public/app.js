@@ -16,6 +16,7 @@ function onYouTubeIframeAPIReady() {
   let currentIndex = 0;
   let rotationTimer = null;
   let videoPlayFull = false;
+  let lastBoostActive = false;
 
   // WOD state
   var wodMode = 'loading'; // 'loading' | 'iframe' | 'screenshot' | 'error'
@@ -535,9 +536,14 @@ function onYouTubeIframeAPIReady() {
       .then(function (config) {
         var zones = config.zones || {};
 
-        // Update rotation order
+        // Update rotation order (server provides effective order, including boost)
         if (zones.rotation_order) {
           rotationOrder = zones.rotation_order;
+        }
+
+        // Safety check: ensure currentIndex stays within bounds after order change
+        if (currentIndex >= rotationOrder.length) {
+          currentIndex = 0;
         }
 
         // Update durations
@@ -555,6 +561,13 @@ function onYouTubeIframeAPIReady() {
         // Update MindBody configuration status
         var mb = config.mindbody || {};
         mindbodyConfigured = !!mb.configured;
+
+        // Log boost state changes
+        var boostActive = !!zones.boostActive;
+        if (boostActive !== lastBoostActive) {
+          console.log('Roster boost ' + (boostActive ? 'ACTIVATED' : 'DEACTIVATED') + ' — rotation: [' + rotationOrder.join(', ') + ']');
+          lastBoostActive = boostActive;
+        }
       })
       .catch(function (err) {
         console.error('Config fetch failed:', err);
