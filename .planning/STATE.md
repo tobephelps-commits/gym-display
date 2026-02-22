@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 Milestone: v1.0 MVP
 Phase: 4 of 5 (MindBody Integration)
-Plan: 1 of 2 in current phase
-Status: Plan complete
-Last activity: 2026-02-21 — Completed 04-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-02-21 — Completed 04-02-PLAN.md
 
-Progress: ███████░░░ 70%
+Progress: ████████░░ 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: ~3 min
-- Total execution time: ~0.35 hours
+- Total execution time: ~0.4 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: ███████░░░ 70%
 | 01-foundation | 2 | ~10 min | ~5 min |
 | 02-wod-display | 2 | ~4 min | ~2 min |
 | 03-video-system | 2 | ~6 min | ~3 min |
-| 04-mindbody-integration | 1 | ~5 min | ~5 min |
+| 04-mindbody-integration | 2 | ~8 min | ~4 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02, 03-01, 03-02, 04-01
+- Last 5 plans: 03-01, 03-02, 04-01, 04-02
 - Trend: Steady
 
 ## Accumulated Context
@@ -63,6 +63,8 @@ Recent decisions affecting current work:
 - MindBody placeholder credential detection skips polling gracefully
 - Display names use "First L." format with ClientId deduplication
 - MindBody token cached 6 days, cleared on 401 for automatic refresh
+- Roster frontend polls every 10s (backend caches at 60s); stale data preferred over error state
+- Athlete grid density: >15 compact (2.2rem), >25 dense (1.8rem), default 2.8rem
 
 ### Pending Todos
 
@@ -75,8 +77,8 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 04-01-PLAN.md — MindBody API client service and roster/schedule endpoints
-Resume file: .planning/phases/04-mindbody-integration/04-01-SUMMARY.md
+Stopped at: Completed 04-02-PLAN.md — Roster zone UI with live check-in board
+Resume file: .planning/phases/04-mindbody-integration/04-02-SUMMARY.md
 
 ### Roadmap Evolution
 
