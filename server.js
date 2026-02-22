@@ -10,6 +10,7 @@ const zoneController = require('./services/zone-controller');
 const videoManager = require('./services/video-manager');
 const reelsFetcher = require('./services/reels-fetcher');
 const wodScraper = require('./services/wod-scraper');
+const mindbodyClient = require('./services/mindbody');
 const { createWodProxy } = require('./services/wod-proxy');
 
 const config = configLoader.getConfig();
@@ -43,6 +44,9 @@ app.get('/api/config', (req, res) => {
     instagram: {
       enabled: (current.instagram && current.instagram.enabled) || false,
       min_display_seconds: (current.instagram && current.instagram.min_display_seconds) || 30
+    },
+    mindbody: {
+      configured: !!(current.mindbody && current.mindbody.api_key && current.mindbody.api_key !== 'your_api_key')
     },
     system: current.system || {}
   };
@@ -133,6 +137,26 @@ app.post('/api/wod/refresh', async (req, res) => {
   }
 });
 
+// Roster API endpoints
+app.get('/api/roster', (req, res) => {
+  res.json(mindbodyClient.getRoster());
+});
+
+app.get('/api/schedule', (req, res) => {
+  const classes = mindbodyClient.getSchedule().map(c => ({
+    id: c.Id,
+    name: (c.ClassDescription && c.ClassDescription.Name) || 'Class',
+    startTime: c.StartDateTime,
+    endTime: c.EndDateTime,
+    coach: (c.Staff && c.Staff.Name) || 'Coach'
+  }));
+  res.json({ classes, count: classes.length });
+});
+
+app.get('/api/mindbody/status', (req, res) => {
+  res.json(mindbodyClient.getStatus());
+});
+
 // Log config reloads
 configLoader.onConfigChange(() => {
   console.log('Config reloaded');
@@ -153,6 +177,14 @@ const server = app.listen(port, '0.0.0.0', () => {
       console.error(`[Server] WodScraper initialization failed (non-fatal): ${err.message}`);
     }
   })();
+
+  // Initialize MindBody client — best-effort, server runs even if this fails
+  try {
+    mindbodyClient.startPolling();
+    console.log('[Server] MindBody polling started');
+  } catch (err) {
+    console.error(`[Server] MindBody initialization failed (non-fatal): ${err.message}`);
+  }
 });
 
 module.exports = { app, server };
