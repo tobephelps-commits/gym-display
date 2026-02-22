@@ -24,6 +24,7 @@ function onYouTubeIframeAPIReady() {
   var wodIframeLoaded = false;
   var wodLastStatus = null;
   var wodScreenshotRefreshTimer = null;
+  var wodScraperReady = false;
 
   // Roster state
   var rosterPollTimer = null;
@@ -590,8 +591,16 @@ function onYouTubeIframeAPIReady() {
 
   /**
    * Attempt to load WOD via iframe. Falls back to screenshot on timeout/error.
+   * Only attempts iframe when scraper reports ready status.
    */
   function tryWodIframe(wodPageUrl) {
+    // Guard: only attempt iframe when scraper is confirmed ready
+    if (!wodScraperReady) {
+      console.log('WOD scraper not ready — skipping iframe, using screenshot');
+      tryWodScreenshot();
+      return;
+    }
+
     if (wodMode === 'iframe' && wodIframeLoaded) {
       return; // already showing iframe successfully
     }
@@ -609,11 +618,31 @@ function onYouTubeIframeAPIReady() {
     }, 10000);
 
     iframe.onload = function () {
-      wodIframeLoaded = true;
       clearTimeout(iframeTimeout);
-      wodMode = 'iframe';
-      showWodElement('wod-iframe');
-      console.log('WOD iframe loaded successfully');
+
+      // Validate: re-check scraper status before trusting iframe content
+      fetch('/api/wod/status')
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.status === 'ready') {
+            wodIframeLoaded = true;
+            wodMode = 'iframe';
+            showWodElement('wod-iframe');
+            console.log('WOD iframe loaded and validated');
+            // Start screenshot refresh as backup in case iframe shows wrong content
+            startScreenshotRefresh();
+          } else {
+            console.log('WOD iframe loaded but scraper not ready — falling back to screenshot');
+            tryWodScreenshot();
+          }
+        })
+        .catch(function () {
+          // Can't verify — trust the iframe
+          wodIframeLoaded = true;
+          wodMode = 'iframe';
+          showWodElement('wod-iframe');
+          console.log('WOD iframe loaded (status check failed, trusting iframe)');
+        });
     };
 
     iframe.onerror = function () {
@@ -663,6 +692,9 @@ function onYouTubeIframeAPIReady() {
       .then(function (data) {
         console.log('WOD status:', data.status);
 
+        // Track scraper readiness for iframe guard
+        wodScraperReady = (data.status === 'ready');
+
         if (data.status === 'ready' && data.wodPageUrl) {
           if (wodLastStatus !== 'ready') {
             // Status changed to ready, try iframe
@@ -673,8 +705,8 @@ function onYouTubeIframeAPIReady() {
           if (wodMode !== 'screenshot') {
             tryWodScreenshot();
           }
-        } else if (data.status === 'error' || data.status === 'idle') {
-          // Try screenshot fallback (may have cached screenshot)
+        } else if (data.status === 'error' || data.status === 'idle' || data.status === 'no-credentials') {
+          // Not ready — fall back to screenshot (may have cached screenshot)
           if (wodMode !== 'screenshot' && wodMode !== 'error') {
             tryWodScreenshot();
           }
