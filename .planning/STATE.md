@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The three-zone rotation (WOD, video, roster) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** v1.0 MVP — Phase 4 MindBody Integration
+**Current focus:** v1.0 MVP — Phase 5 Deployment & Reliability
 
 ## Current Position
 
 Milestone: v1.0 MVP
-Phase: 4 of 5 (MindBody Integration)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-02-21 — Completed 04-03-PLAN.md
+Phase: 5 of 5 (Deployment & Reliability)
+Plan: 2 of 3 in current phase
+Status: Plan complete
+Last activity: 2026-02-22 — Completed 05-02-PLAN.md
 
-Progress: ████████░░ 80%
+Progress: █████████░ 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 11
 - Average duration: ~3 min
-- Total execution time: ~0.45 hours
+- Total execution time: ~0.5 hours
 
 **By Phase:**
 
@@ -32,9 +32,10 @@ Progress: ████████░░ 80%
 | 02-wod-display | 2 | ~4 min | ~2 min |
 | 03-video-system | 2 | ~6 min | ~3 min |
 | 04-mindbody-integration | 3 | ~11 min | ~3.5 min |
+| 05-deployment-reliability | 2 | ~6 min | ~3 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02, 04-01, 04-02, 04-03
+- Last 5 plans: 04-02, 04-03, 05-01, 05-02
 - Trend: Steady
 
 ## Accumulated Context
@@ -68,6 +69,9 @@ Recent decisions affecting current work:
 - Boost order: server drives effective rotation order; frontend reads it passively (no client-side boost logic)
 - 30s boost check interval balances responsiveness with minimal overhead
 - Boost check only runs when MindBody is configured
+- cec-client -s -d 1 for reliable HDMI CEC commands (stdin mode, minimal debug)
+- Persistent=true on systemd timers ensures missed triggers fire on boot
+- Logrotate for file logs; journald limits (100M/7day) handled by setup.sh
 
 ### Pending Todos
 
@@ -79,9 +83,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Completed 04-03-PLAN.md — Class-aware rotation boosting
-Resume file: .planning/phases/04-mindbody-integration/04-03-SUMMARY.md
+Last session: 2026-02-22
+Stopped at: Completed 05-02-PLAN.md — HDMI CEC off-hours control & log rotation
+Resume file: .planning/phases/05-deployment-reliability/05-02-SUMMARY.md
 
 ### Roadmap Evolution
 
