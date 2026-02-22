@@ -1,4 +1,7 @@
 node_modules/
-cache/*.png
+cache/
 .env
 *.log
+config.yaml
+.mcp.json
+debug-*.jpg

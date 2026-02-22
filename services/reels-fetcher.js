@@ -1,26 +1,23 @@
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
+const { execFile } = require('child_process');
 const configLoader = require('./config-loader');
 
 const CACHE_DIR = path.join(__dirname, '..', 'cache', 'reels');
-const GRAPH_API_BASE = 'https://graph.instagram.com/v21.0';
-const TOKEN_REFRESH_DAYS = 30;
+const PYTHON_CMD = process.platform === 'win32' ? 'py' : 'python3';
 
 class ReelsFetcher {
   constructor() {
     this._enabled = false;
-    this._accessToken = '';
-    this._userId = '';
-    this._maxReels = 20;
+    this._username = '';
+    this._maxReels = 10;
     this._fetchIntervalMinutes = 60;
     this._minDisplaySeconds = 30;
 
     this._reelsList = []; // Array of { id, filename }
     this._lastFetch = null;
-    this._tokenSetAt = null;
     this._fetchTimer = null;
-    this._tokenRefreshTimer = null;
+    this._fetching = false;
 
     // Load config
     this._loadConfig();
@@ -32,6 +29,9 @@ class ReelsFetcher {
 
     // Ensure cache directory exists
     this._ensureCacheDir();
+
+    // Scan existing cached reels
+    this._scanCachedReels();
 
     // Run initial fetch (best-effort, async)
     if (this._enabled) {
@@ -47,26 +47,21 @@ class ReelsFetcher {
     const ig = config.instagram || {};
 
     const wasEnabled = this._enabled;
-    this._enabled = !!(ig.enabled && ig.access_token && ig.user_id);
-    this._accessToken = ig.access_token || '';
-    this._userId = ig.user_id || '';
-    this._maxReels = ig.max_reels || 20;
+    this._enabled = !!(ig.enabled && ig.username);
+    this._username = ig.username || '';
+    this._maxReels = ig.max_reels || 10;
     this._fetchIntervalMinutes = ig.fetch_interval_minutes || 60;
     this._minDisplaySeconds = ig.min_display_seconds || 30;
 
-    if (this._accessToken) {
-      this._tokenSetAt = this._tokenSetAt || new Date();
-    }
-
     if (!this._enabled) {
       if (wasEnabled) {
-        console.log('[ReelsFetcher] Instagram disabled or missing credentials');
+        console.log('[ReelsFetcher] Instagram disabled or missing username');
         this._stopFetchCycle();
       } else {
-        console.log('[ReelsFetcher] Instagram Reels disabled (no credentials configured)');
+        console.log('[ReelsFetcher] Instagram Reels disabled (no username configured)');
       }
     } else if (!wasEnabled && this._enabled) {
-      console.log('[ReelsFetcher] Instagram Reels enabled');
+      console.log(`[ReelsFetcher] Instagram Reels enabled for @${this._username}`);
       this._startFetchCycle();
     }
   }
@@ -83,154 +78,129 @@ class ReelsFetcher {
   }
 
   /**
-   * Fetch list of reels from Instagram Graph API.
-   * @returns {Promise<Array<{id: string, media_url: string, timestamp: string}>>}
+   * Scan existing cached .mp4 files and populate _reelsList.
    */
-  async fetchReelsList() {
-    if (!this._enabled) return [];
-
+  _scanCachedReels() {
     try {
-      const url = `${GRAPH_API_BASE}/${this._userId}/media?fields=id,media_type,media_url,timestamp&access_token=${this._accessToken}`;
-      const allVideos = [];
-      let nextUrl = url;
+      const files = fs.readdirSync(CACHE_DIR)
+        .filter(f => f.endsWith('.mp4'))
+        .sort()
+        .reverse(); // newest first by filename (date-based)
 
-      while (nextUrl && allVideos.length < this._maxReels) {
-        const data = await this._httpGet(nextUrl);
-        if (!data || !data.data) break;
+      this._reelsList = files.map(f => ({
+        id: f.replace('.mp4', ''),
+        filename: f
+      }));
 
-        const videos = data.data.filter(item => item.media_type === 'VIDEO');
-        allVideos.push(...videos.map(v => ({
-          id: v.id,
-          media_url: v.media_url,
-          timestamp: v.timestamp
-        })));
-
-        nextUrl = (data.paging && data.paging.next) ? data.paging.next : null;
+      if (this._reelsList.length > 0) {
+        console.log(`[ReelsFetcher] Found ${this._reelsList.length} cached reels`);
       }
-
-      // Limit to max_reels most recent
-      return allVideos.slice(0, this._maxReels);
     } catch (err) {
-      if (err.statusCode === 401 || err.statusCode === 403) {
-        console.warn('[ReelsFetcher] Token expired or invalid. Please update instagram.access_token in config.yaml');
-      } else {
-        console.error(`[ReelsFetcher] Failed to fetch reels list: ${err.message}`);
-      }
-      return [];
+      // Directory may not exist yet
     }
   }
 
   /**
-   * Download a reel .mp4 file to cache.
-   * @param {string} id - Reel ID
-   * @param {string} mediaUrl - Direct .mp4 URL
-   * @returns {Promise<boolean>} true if downloaded or already exists
-   */
-  async downloadReel(id, mediaUrl) {
-    const filePath = path.join(CACHE_DIR, `${id}.mp4`);
-
-    // Skip if file already exists and is non-empty
-    try {
-      const stat = fs.statSync(filePath);
-      if (stat.size > 0) return true;
-    } catch (e) {
-      // File doesn't exist, proceed to download
-    }
-
-    try {
-      await this._downloadFile(mediaUrl, filePath);
-      return true;
-    } catch (err) {
-      console.error(`[ReelsFetcher] Failed to download reel ${id}: ${err.message}`);
-      // Clean up partial file
-      try { fs.unlinkSync(filePath); } catch (e) { /* ignore */ }
-      return false;
-    }
-  }
-
-  /**
-   * Prune old reels not in the keepIds set.
-   * @param {Set<string>} keepIds - Set of reel IDs to keep
-   */
-  pruneOldReels(keepIds) {
-    try {
-      const files = fs.readdirSync(CACHE_DIR);
-      let pruned = 0;
-      for (const file of files) {
-        if (!file.endsWith('.mp4')) continue;
-        const id = file.replace('.mp4', '');
-        if (!keepIds.has(id)) {
-          fs.unlinkSync(path.join(CACHE_DIR, file));
-          pruned++;
-        }
-      }
-      return pruned;
-    } catch (err) {
-      console.error(`[ReelsFetcher] Failed to prune old reels: ${err.message}`);
-      return 0;
-    }
-  }
-
-  /**
-   * Run a complete fetch cycle: fetch list, download new, prune old.
+   * Run instaloader to fetch reels from the public profile.
+   * Downloads only VIDEO posts, skips images, limited to max_reels.
    */
   async runFetchCycle() {
-    if (!this._enabled) return;
+    if (!this._enabled || this._fetching) return;
+    this._fetching = true;
 
     try {
-      const reels = await this.fetchReelsList();
-      if (reels.length === 0) {
-        console.log('[ReelsFetcher] No reels found from API');
-        return;
+      console.log(`[ReelsFetcher] Fetching reels from @${this._username}...`);
+
+      await this._runInstaloader();
+
+      // Clean up non-mp4 files instaloader may create
+      this._cleanNonVideos();
+
+      // Scan what we have now
+      this._scanCachedReels();
+
+      // Prune if over limit
+      if (this._reelsList.length > this._maxReels) {
+        const toRemove = this._reelsList.slice(this._maxReels);
+        for (const reel of toRemove) {
+          try {
+            fs.unlinkSync(path.join(CACHE_DIR, reel.filename));
+          } catch (e) { /* ignore */ }
+        }
+        this._reelsList = this._reelsList.slice(0, this._maxReels);
+        console.log(`[ReelsFetcher] Pruned ${toRemove.length} old reels`);
       }
 
-      let downloaded = 0;
-      const keepIds = new Set();
-
-      for (const reel of reels) {
-        keepIds.add(reel.id);
-        const isNew = await this.downloadReel(reel.id, reel.media_url);
-        if (isNew) downloaded++;
-      }
-
-      const pruned = this.pruneOldReels(keepIds);
-
-      // Update internal list
-      this._reelsList = reels.map(r => ({
-        id: r.id,
-        filename: `${r.id}.mp4`
-      }));
       this._lastFetch = new Date();
-
-      console.log(`[ReelsFetcher] Fetched ${reels.length} reels, downloaded ${downloaded} new, pruned ${pruned} old`);
+      console.log(`[ReelsFetcher] Fetch complete: ${this._reelsList.length} reels cached`);
     } catch (err) {
       console.error(`[ReelsFetcher] Fetch cycle failed: ${err.message}`);
+    } finally {
+      this._fetching = false;
     }
   }
 
   /**
-   * Refresh the Instagram access token (long-lived tokens last 60 days).
+   * Remove non-mp4 files that instaloader may leave behind.
    */
-  async refreshToken() {
-    if (!this._enabled || !this._accessToken) return;
-
+  _cleanNonVideos() {
     try {
-      const url = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${this._accessToken}`;
-      const data = await this._httpGet(url);
-
-      if (data && data.access_token) {
-        this._accessToken = data.access_token;
-        this._tokenSetAt = new Date();
-        console.log('[ReelsFetcher] Token refreshed successfully. New token (update config.yaml for persistence):');
-        console.log(`[ReelsFetcher] access_token: ${this._accessToken}`);
+      const files = fs.readdirSync(CACHE_DIR);
+      for (const f of files) {
+        if (!f.endsWith('.mp4')) {
+          fs.unlinkSync(path.join(CACHE_DIR, f));
+        }
       }
-    } catch (err) {
-      console.warn(`[ReelsFetcher] Token refresh failed: ${err.message}`);
-    }
+    } catch (err) { /* ignore */ }
   }
 
   /**
-   * Start the fetch and token refresh cycles.
+   * Shell out to instaloader to download videos.
+   * Uses --no-pictures to skip images, --count to limit posts scanned.
+   */
+  _runInstaloader() {
+    return new Promise((resolve, reject) => {
+      // Scan more posts than max_reels since not all posts are videos
+      const scanCount = this._maxReels * 2;
+
+      const args = [
+        '-m', 'instaloader',
+        '--no-captions',
+        '--no-metadata-json',
+        '--no-compress-json',
+        '--no-pictures',
+        '--no-profile-pic',
+        '--no-video-thumbnails',
+        '--count', String(scanCount),
+        '--dirname-pattern', CACHE_DIR,
+        '--filename-pattern', '{date_utc}',
+        '--', this._username
+      ];
+
+      console.log(`[ReelsFetcher] Running: ${PYTHON_CMD} ${args.join(' ')}`);
+
+      const proc = execFile(PYTHON_CMD, args, {
+        timeout: 120000, // 2 minute timeout
+        maxBuffer: 1024 * 1024
+      }, (err, stdout, stderr) => {
+        if (err) {
+          // instaloader exits non-zero on rate limits but may have
+          // already downloaded some files - that's okay
+          if (stderr && stderr.includes('403')) {
+            console.warn('[ReelsFetcher] Hit Instagram rate limit (some reels may still have downloaded)');
+            resolve();
+          } else {
+            reject(new Error(err.message));
+          }
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  /**
+   * Start the periodic fetch cycle.
    */
   _startFetchCycle() {
     this._stopFetchCycle();
@@ -246,27 +216,15 @@ class ReelsFetcher {
         console.error(`[ReelsFetcher] Periodic fetch failed: ${err.message}`);
       });
     }, this._fetchIntervalMinutes * 60 * 1000);
-
-    // Token refresh every 30 days
-    this._tokenRefreshTimer = setInterval(() => {
-      const tokenAge = this._tokenSetAt ? (Date.now() - this._tokenSetAt.getTime()) / (1000 * 60 * 60 * 24) : 0;
-      if (tokenAge >= TOKEN_REFRESH_DAYS) {
-        this.refreshToken();
-      }
-    }, 24 * 60 * 60 * 1000); // Check daily
   }
 
   /**
-   * Stop fetch and token refresh cycles.
+   * Stop the periodic fetch cycle.
    */
   _stopFetchCycle() {
     if (this._fetchTimer) {
       clearInterval(this._fetchTimer);
       this._fetchTimer = null;
-    }
-    if (this._tokenRefreshTimer) {
-      clearInterval(this._tokenRefreshTimer);
-      this._tokenRefreshTimer = null;
     }
   }
 
@@ -281,15 +239,11 @@ class ReelsFetcher {
    * Returns status object.
    */
   getStatus() {
-    const tokenAge = this._tokenSetAt
-      ? Math.floor((Date.now() - this._tokenSetAt.getTime()) / (1000 * 60 * 60 * 24))
-      : null;
-
     return {
       enabled: this._enabled,
+      username: this._username,
       reelsCount: this._reelsList.length,
-      lastFetch: this._lastFetch ? this._lastFetch.toISOString() : null,
-      tokenAgeDays: tokenAge
+      lastFetch: this._lastFetch ? this._lastFetch.toISOString() : null
     };
   }
 
@@ -298,84 +252,6 @@ class ReelsFetcher {
    */
   isEnabled() {
     return this._enabled;
-  }
-
-  /**
-   * HTTP GET helper returning parsed JSON.
-   */
-  _httpGet(url) {
-    return new Promise((resolve, reject) => {
-      const parsedUrl = new URL(url);
-      const options = {
-        hostname: parsedUrl.hostname,
-        path: parsedUrl.pathname + parsedUrl.search,
-        method: 'GET',
-        headers: { 'User-Agent': 'GymDisplay/1.0' }
-      };
-
-      const req = https.request(options, (res) => {
-        let data = '';
-        res.on('data', chunk => { data += chunk; });
-        res.on('end', () => {
-          if (res.statusCode >= 400) {
-            const err = new Error(`HTTP ${res.statusCode}: ${data.substring(0, 200)}`);
-            err.statusCode = res.statusCode;
-            reject(err);
-            return;
-          }
-          try {
-            resolve(JSON.parse(data));
-          } catch (e) {
-            reject(new Error(`Invalid JSON response: ${data.substring(0, 200)}`));
-          }
-        });
-      });
-
-      req.on('error', reject);
-      req.setTimeout(15000, () => {
-        req.destroy(new Error('Request timeout'));
-      });
-      req.end();
-    });
-  }
-
-  /**
-   * Download a file from URL to local path.
-   */
-  _downloadFile(url, destPath) {
-    return new Promise((resolve, reject) => {
-      const parsedUrl = new URL(url);
-      const protocol = parsedUrl.protocol === 'https:' ? https : require('http');
-
-      const req = protocol.request(url, (res) => {
-        // Follow redirects
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          this._downloadFile(res.headers.location, destPath).then(resolve).catch(reject);
-          return;
-        }
-
-        if (res.statusCode !== 200) {
-          reject(new Error(`Download failed: HTTP ${res.statusCode}`));
-          return;
-        }
-
-        const fileStream = fs.createWriteStream(destPath);
-        res.pipe(fileStream);
-        fileStream.on('finish', () => {
-          fileStream.close(resolve);
-        });
-        fileStream.on('error', (err) => {
-          fs.unlinkSync(destPath);
-          reject(err);
-        });
-      });
-
-      req.on('error', reject);
-      req.setTimeout(60000, () => {
-        req.destroy(new Error('Download timeout'));
-      });
-      req.end();
-    });
   }
 }
 

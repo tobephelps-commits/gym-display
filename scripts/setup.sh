@@ -97,6 +97,16 @@ apt install -y cec-utils
 echo ""
 
 # ---------------------------------------------------------------------------
+# 5b. Install Python 3 and instaloader (for Instagram Reels fetching)
+# ---------------------------------------------------------------------------
+
+echo ">>> Installing Python 3 and instaloader..."
+apt install -y python3 python3-pip
+pip3 install --break-system-packages instaloader
+echo "    instaloader: $(python3 -m instaloader --version 2>/dev/null || echo 'installed')"
+echo ""
+
+# ---------------------------------------------------------------------------
 # 6. Install application dependencies
 # ---------------------------------------------------------------------------
 

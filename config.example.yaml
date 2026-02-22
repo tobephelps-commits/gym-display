@@ -1,0 +1,58 @@
+# ── Gym Display System Configuration ──
+# Copy this file to config.yaml and fill in your credentials:
+#   cp config.example.yaml config.yaml
+
+# WodScreen / Beyond The Whiteboard
+wodscreen:
+  url: "https://www.wodscreen.com"
+  username: "your_email@example.com"
+  password: "your_password"
+  refresh_interval_minutes: 30
+  screenshot_selector: "#workout-display"
+
+# Display Zone Rotation
+zones:
+  rotation_order: ["wod", "video", "roster"]
+  wod:
+    duration_seconds: 120
+  video:
+    play_full: true
+    fallback_seconds: 180
+  roster:
+    duration_seconds: 60
+    boost_before_class_minutes: 15
+    boost_frequency: 2
+
+# Video Playlist (YouTube URLs only)
+videos:
+  - url: "https://www.youtube.com/watch?v=82jNjDS19lg"
+    title: "Double Under Demo"
+    enabled: true
+  - url: "https://www.youtube.com/watch?v=QABW99qPiNM&pp=ygURYmlyZGRvZ3MgZXhlcmNpc2U%3D"
+    title: "Bird Dogs"
+    enabled: true
+
+# MindBody Integration
+mindbody:
+  api_key: "your_api_key"
+  site_id: "99"
+  source_name: "ICWA"
+  username: "your_email@example.com"
+  password: "your_password"
+  poll_interval_minutes: 5
+
+# Instagram Reels (visual fallback) — uses instaloader, no login required
+instagram:
+  enabled: true
+  username: "bigbarncrossfit"
+  max_reels: 10
+  fetch_interval_minutes: 60
+  min_display_seconds: 30
+
+# System
+system:
+  port: 3000
+  log_level: "info"
+  timezone: "America/Denver"
+  screen_off_start: "21:00"
+  screen_off_end: "04:30"
