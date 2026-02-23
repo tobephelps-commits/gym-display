@@ -45,4 +45,5 @@ exec chromium-browser \
   --check-for-update-interval=31536000 \
   --disable-pinch \
   --overscroll-history-navigation=0 \
+  --password-store=basic \
   http://localhost:3000
