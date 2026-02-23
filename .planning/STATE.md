@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 
 Milestone: v1.1 Command Center
 Phase: 6 of 10 (Google Sheets Foundation)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-02-23 — Milestone v1.1 created
+Plan: 01 complete
+Status: Plan 01 done — SheetsClient service + API endpoints built. User setup needed (Google Cloud service account + credentials).
+Last activity: 2026-02-23 — Phase 06 Plan 01 complete
 
-Progress: ░░░░░░░░░░ 0%
+Progress: █░░░░░░░░░ 10%
 
 ## Deployment Info
 
@@ -86,6 +86,9 @@ WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/1000 nohup /home/BigBarn/gym
 
 See PROJECT.md Key Decisions table for full list with outcomes.
 
+- **Sheets credentials_file path** (Phase 06): Use file path to JSON key instead of inline private key to avoid YAML newline escaping issues
+- **Sheets initial poll delay** (Phase 06): 5-second delay on first poll to avoid Google API cold-start quota spike
+
 ### Pending Todos
 
 - [ ] Investigate Instagram rate limiting on Pi (workaround: scp from Windows)
@@ -103,5 +106,5 @@ None (Instagram fix planned for Phase 7)
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Milestone v1.1 initialization
-Resume file: None
+Stopped at: Phase 06 Plan 01 complete — next is user setup (Google Cloud service account) then Plan 02
+Resume file: .planning/phases/06-google-sheets-foundation/06-01-SUMMARY.md
