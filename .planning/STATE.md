@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 
 Milestone: v1.1 Command Center
 Phase: 8 of 10 (Team vs Team Leaderboard)
-Plan: 1 of 2 in current phase
-Status: In progress — LeaderboardService backend, API endpoint, and zone integration complete (Plan 01). Frontend rendering remains (Plan 02).
-Last activity: 2026-02-23 — Completed 08-01-PLAN.md
+Plan: 2 of 2 in current phase
+Status: Phase complete — backend service, API, zone-controller, and frontend all done
+Last activity: 2026-02-23 — Completed 08-02-PLAN.md
 
-Progress: ███░░░░░░░ 30%
+Progress: ████░░░░░░ 40%
 
 ## Deployment Info
 
@@ -113,5 +113,5 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 08-01-PLAN.md, ready for 08-02
-Resume file: .planning/phases/08-team-leaderboard/08-01-SUMMARY.md
+Stopped at: Completed 08-02-PLAN.md — Phase 8 complete, ready for Phase 9
+Resume file: .planning/phases/08-team-leaderboard/08-02-SUMMARY.md
