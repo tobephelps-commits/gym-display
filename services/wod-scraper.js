@@ -59,7 +59,7 @@ class WodScraper {
 
       this.browser = await puppeteer.launch({
         executablePath,
-        headless: true,
+        headless: 'new',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -69,7 +69,9 @@ class WodScraper {
           '--disable-extensions',
           '--no-first-run',
           '--no-zygote',
+          '--ozone-platform=headless',
         ],
+        timeout: 60000,
       });
 
       this.page = await this.browser.newPage();
