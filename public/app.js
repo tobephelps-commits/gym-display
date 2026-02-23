@@ -467,6 +467,12 @@ function onYouTubeIframeAPIReady() {
 
     showLeaderboardState('leaderboard-display');
 
+    // Update title from API if provided
+    if (data.title) {
+      var titleEl = document.getElementById('leaderboard-title');
+      if (titleEl) titleEl.textContent = data.title;
+    }
+
     var container = document.getElementById('leaderboard-teams');
     if (!container) return;
     container.innerHTML = '';

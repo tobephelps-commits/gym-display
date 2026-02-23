@@ -12,6 +12,7 @@ class LeaderboardService {
   constructor() {
     this._leaderboard = {
       active: false,
+      title: 'TEAM CHALLENGE',
       teams: [],
       lastUpdated: null
     };
@@ -50,10 +51,17 @@ class LeaderboardService {
   _refreshFromSheets() {
     const rows = sheetsClient.getTabData('Leaderboard');
 
+    // Read title: Sheets "Title" column on first row > config > default
+    const config = configLoader.getConfig();
+    const configTitle = (config.leaderboard && config.leaderboard.title) || '';
+    const sheetsTitle = (rows && rows.length > 0 && rows[0].Title) ? String(rows[0].Title).trim() : '';
+    const title = sheetsTitle || configTitle || 'TEAM CHALLENGE';
+
     // If no data (Sheets not configured or tab empty/missing), mark inactive
     if (!rows || rows.length === 0) {
       this._leaderboard = {
         active: false,
+        title,
         teams: [],
         lastUpdated: null
       };
@@ -103,6 +111,7 @@ class LeaderboardService {
 
     this._leaderboard = {
       active: true,
+      title,
       teams,
       lastUpdated: new Date().toISOString()
     };

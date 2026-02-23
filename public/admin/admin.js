@@ -159,6 +159,10 @@
     setVal('duration-leaderboard', zones.leaderboard && zones.leaderboard.duration_seconds);
     setVal('duration-announcements', zones.announcements && zones.announcements.duration_seconds);
 
+    // Leaderboard title
+    var lbConfig = config.leaderboard || {};
+    setVal('leaderboard-title', lbConfig.title || '');
+
     // Video zone
     var vid = zones.video || {};
     document.getElementById('video-play-full').checked = !!vid.play_full;
@@ -306,7 +310,8 @@
           },
           leaderboard: { duration_seconds: lbDur },
           announcements: { duration_seconds: annDur }
-        }
+        },
+        leaderboard: { title: (document.getElementById('leaderboard-title') || {}).value || '' }
       }
     };
   }

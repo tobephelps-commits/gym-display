@@ -23,11 +23,15 @@ zones:
     boost_before_class_minutes: 15
     boost_frequency: 2
   # Leaderboard Zone: Reads from Sheets "Leaderboard" tab
-  # Tab columns: Name, Team, Points
+  # Tab columns: Name, Team, Points (optional: Title on first row overrides config)
   # Teams: Green, Blue, Red (case-insensitive)
   # Zone auto-skips when tab is empty or Sheets not configured
   leaderboard:
     duration_seconds: 90
+
+# Leaderboard settings
+leaderboard:
+  title: "CROSSFIT OPEN"  # Display title (overridden by Sheets "Title" column if present)
   # Announcements Zone: Reads from Sheets "Announcements" tab
   # Tab columns: Title, Body, Active (TRUE/FALSE), Priority (optional: urgent/normal)
   # Zone auto-skips when no active announcements or Sheets not configured
