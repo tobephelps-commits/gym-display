@@ -11,7 +11,7 @@ None
 ## Milestones
 
 - ✅ [v1.0 MVP](milestones/v1.0-ROADMAP.md) (Phases 1-5) — SHIPPED 2026-02-23
-- 🚧 **v1.1 Command Center** — Phases 6-10 (in progress)
+- ✅ [v1.1 Command Center](milestones/v1.1-ROADMAP.md) (Phases 6-10) — SHIPPED 2026-02-23
 
 ## Phases
 
@@ -34,7 +34,7 @@ See [milestone archive](milestones/v1.0-ROADMAP.md) for full phase details.
 
 </details>
 
-### 🚧 v1.1 Command Center (In Progress)
+### ✅ v1.1 Command Center — SHIPPED 2026-02-23
 
 **Milestone Goal:** Google Sheets as central data hub, two new rotation zones (leaderboard + announcements), web admin panel, and Instagram fix
 
@@ -89,10 +89,12 @@ Plans:
 **Depends on**: Phase 7, Phase 8, Phase 9
 **Research**: Likely (web framework choice for admin UI, serving alongside kiosk)
 **Research topics**: Lightweight admin UI framework for Node.js, serving admin alongside existing Express server
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 10-01: TBD (run /gsd:plan-phase 10 to break down)
+- [x] 10-01: Admin Panel Foundation (Backend + HTML Shell) — completed 2026-02-23
+- [x] 10-02: Status Dashboard with Live Polling — completed 2026-02-23
+- [x] 10-03: Settings Page with Config Editor — completed 2026-02-23
 
 ## Progress
 
@@ -110,4 +112,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 7. Playlist Sync + Instagram Fix | v1.1 | 2/2 | Complete | 2026-02-23 |
 | 8. Team vs Team Leaderboard | v1.1 | 2/2 | Complete | 2026-02-23 |
 | 9. Announcements Zone | v1.1 | 2/2 | Complete | 2026-02-23 |
-| 10. Web Admin Panel | v1.1 | 0/? | Not started | - |
+| 10. Web Admin Panel | v1.1 | 3/3 | Complete | 2026-02-23 |
