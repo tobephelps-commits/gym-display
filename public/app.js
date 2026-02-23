@@ -199,12 +199,12 @@ function onYouTubeIframeAPIReady() {
     videoZoneActive = false;
     youtubeComplete = false;
 
-    // Pause YouTube
+    // Stop YouTube completely (not just pause — prevents autoplay of related videos)
     if (ytPlayer && youtubeReady) {
       try {
-        ytPlayer.pauseVideo();
+        ytPlayer.stopVideo();
       } catch (e) {
-        // Player may not be in a state to pause
+        // Player may not be in a state to stop
       }
     }
 
@@ -218,6 +218,11 @@ function onYouTubeIframeAPIReady() {
    */
   function playNextYouTube() {
     if (!videoZoneActive) return;
+    // Stop YouTube immediately to prevent autoplay of related videos
+    if (ytPlayer && youtubeReady) {
+      try { ytPlayer.stopVideo(); } catch (e) {}
+    }
+    videoZoneActive = false;
     console.log('YouTube video ended, advancing zone');
     signalVideoZoneComplete();
   }
