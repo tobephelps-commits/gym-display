@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The three-zone rotation (WOD, video, roster) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** Deployment + Video rotation fix
+**Current focus:** Monitoring & polish
 
 ## Current Position
 
 Milestone: v1.0 MVP
-Phase: Post-deployment troubleshooting
-Status: Deployed to Pi, WOD working, video single-item rotation NOT YET WORKING
-Last activity: 2026-02-23 — Deployed to Pi, fixing video rotation
+Phase: Complete — all zones working
+Status: Deployed and running on Pi. WOD, video (1-per-rotation), reels, and roster skip all working.
+Last activity: 2026-02-23 — Fixed video rendering, rotation, reels, and WOD
 
-Progress: ██████████ 90%
+Progress: ██████████ 100%
 
 ## Deployment Info
 
@@ -71,37 +71,30 @@ pkill -9 chromium  # labwc autostart will relaunch it
 WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/1000 nohup /home/BigBarn/gym-display/scripts/start-kiosk.sh > /tmp/kiosk.log 2>&1 &
 ```
 
-## Active Bug: Video Single-Item Rotation
+## Resolved: Video Rotation & Rendering
 
-**Problem:** Videos play back-to-back instead of one-per-rotation.
+**Problems fixed (2026-02-23):**
 
-**What was done:**
-- Rewrote `public/app.js` to use a `mediaQueue` that plays one item per video zone visit
-- Queue cycles: YouTube 1 → YouTube 2 → Reel 1 → Reel 2 → ... → wraps
-- `mediaQueuePos` persists across rotation visits
-- Added `stopVideo()` call and `videoZoneActive = false` before async zone advance
-- Added `Cache-Control: no-store` to Express static serving
-- Verified the correct app.js IS being served (confirmed via curl + md5sum)
+1. **Back-to-back videos** — YouTube iframe stayed active at opacity:0 between zone visits, autoplaying related videos and firing stale PLAYING/ENDED postMessage events.
+   - **Fix:** Destroy YouTube player (`ytPlayer.destroy()`) on zone deactivation, create fresh `YT.Player` on each zone activation. No persistent iframe = no stale events.
 
-**What hasn't worked:**
-- Despite the server serving the correct JS with no-cache headers, videos still play back-to-back
-- YouTube `onStateChange(ENDED)` fires and calls `playNextYouTube()` → `signalVideoZoneComplete()`
-- But somehow a second video still plays before zone advances
+2. **White/grey video box** — YouTube iframe rendered as white rectangle with audio working. Caused by Chromium GPU compositing bug on Raspberry Pi with Wayland.
+   - **Fix:** Added `--disable-gpu-compositing` flag to kiosk Chromium launch script.
 
-**Next steps to investigate:**
-- Use browser DevTools (via Puppeteer or remote debugging) to see actual console output
-- Check if YouTube iframe API `loadVideoById` triggers ENDED for the previous video
-- Check if the zone advance POST actually returns and the zone switch happens
-- Consider using `--remote-debugging-port=9222` on kiosk Chromium for remote DevTools
-- May need to destroy/recreate YouTube player each visit instead of reusing it
+3. **Roster zone not skipping** — Roster displayed even when MindBody API not configured.
+   - **Fix:** `onRosterZoneActive()` checks `mindbodyConfigured` flag and calls `setTimeout(advanceZone, 0)` to skip.
+
+4. **Changes not reaching Pi** — Code was edited locally on Windows but not deployed via git push/pull workflow.
+   - **Lesson:** Always use deploy workflow: `git push` → `ssh` → `git pull` → restart service.
 
 ## Instagram Reels
 
 - **Method:** instaloader (Python CLI tool, no API key needed)
 - **Account:** @bigbarncrossfit (public, no login required)
-- **Cache:** ~/gym-display/cache/reels/*.mp4
-- **Issue on Pi:** Instagram rate-limiting from Pi's IP (JSON parse errors)
-- **Workaround:** Reels were pre-cached from Windows dev machine; Pi will retry hourly
+- **Cache:** ~/gym-display/cache/reels/*.mp4 (10 reels cached)
+- **Issue on Pi:** Instagram rate-limiting from Pi's IP (instaloader fails)
+- **Workaround:** Reels pre-cached from Windows via `scp` to Pi; Pi retries hourly but will likely fail
+- **To refresh:** Run instaloader on Windows, then `scp cache/reels/*.mp4 BigBarn@100.120.21.22:~/gym-display/cache/reels/`
 
 ## Performance Metrics
 
@@ -123,23 +116,26 @@ Recent decisions (2026-02-23):
 - Static files served with Cache-Control: no-store (prevents stale JS)
 - Puppeteer headless needs --ozone-platform=headless on Wayland systems
 - Chromium kiosk needs --password-store=basic to skip GNOME Keyring prompt
+- Chromium kiosk needs --disable-gpu-compositing for YouTube iframe rendering on Pi
 - LightDM autologin via /etc/lightdm/lightdm.conf.d/50-autologin.conf
 - labwc autostart at ~/.config/labwc/autostart (NOT systemd gym-kiosk.service)
+- Destroy/recreate YouTube player each zone visit (not persistent iframe)
+- YouTube API script loaded async to avoid blocking page init
 
 Prior decisions: see .planning/PROJECT.md Key Decisions table
 
 ### Pending Todos
 
-- [ ] Fix video single-item-per-rotation (videos still play back-to-back)
-- [ ] Investigate Instagram rate limiting on Pi (instaloader fails from Pi IP)
+- [x] Fix video single-item-per-rotation — resolved via destroy/recreate player
+- [x] Fix white/grey video rendering — resolved via --disable-gpu-compositing
+- [ ] Investigate Instagram rate limiting on Pi (workaround: scp from Windows)
 
 ### Blockers/Concerns
 
-- YouTube iframe API may be auto-advancing despite stopVideo() calls
-- May need remote Chrome DevTools debugging to see what's happening in browser
+- Instagram instaloader blocked from Pi's IP — must refresh reels from Windows manually
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Video rotation bug — app.js changes deployed but videos still play back-to-back
-Resume with: `ssh BigBarn@100.120.21.22` to access Pi, troubleshoot video rotation in browser
+Stopped at: All zones working — WOD, video (1-per-rotation), reels, roster skip
+Resume with: System is running. Monitor for stability. Refresh reels from Windows periodically.
