@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 ## Current Position
 
 Milestone: v1.1 Command Center
-Phase: 6 of 10 (Google Sheets Foundation)
-Plan: 01 complete
-Status: Plan 01 done — SheetsClient service + API endpoints built. User setup needed (Google Cloud service account + credentials).
-Last activity: 2026-02-23 — Phase 06 Plan 01 complete
+Phase: 7 of 10 (Playlist Sync + Instagram Fix)
+Plan: 02 complete
+Status: Plan 02 done — ReelsFetcher downloads from Sheets URLs via yt-dlp, falls back to instaloader. yt-dlp install needed on Pi.
+Last activity: 2026-02-23 — Phase 07 Plan 02 complete
 
-Progress: █░░░░░░░░░ 10%
+Progress: ██░░░░░░░░ 20%
 
 ## Deployment Info
 
@@ -74,11 +74,12 @@ WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/1000 nohup /home/BigBarn/gym
 
 ## Instagram Reels
 
-- **Method:** instaloader (Python CLI tool, no API key needed)
-- **Account:** @bigbarncrossfit (public, no login required)
+- **Primary method:** yt-dlp downloads from Sheets "Playlist" tab URLs (Phase 07)
+- **Fallback:** instaloader profile scraping when Sheets not configured
+- **Account:** @bigbarncrossfit (public, no login required for instaloader fallback)
 - **Cache:** ~/gym-display/cache/reels/*.mp4 (10 reels cached)
-- **Issue on Pi:** Instagram rate-limiting from Pi's IP (instaloader fails)
-- **To refresh:** Run instaloader on Windows, then `scp cache/reels/*.mp4 BigBarn@100.120.21.22:~/gym-display/cache/reels/`
+- **Filename:** MD5 hash of URL (stable, prevents re-downloads)
+- **yt-dlp install:** `pip3 install yt-dlp` on Pi (graceful degradation if missing)
 
 ## Accumulated Context
 
@@ -88,15 +89,19 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 
 - **Sheets credentials_file path** (Phase 06): Use file path to JSON key instead of inline private key to avoid YAML newline escaping issues
 - **Sheets initial poll delay** (Phase 06): 5-second delay on first poll to avoid Google API cold-start quota spike
+- **Reels source priority** (Phase 07): Sheets Playlist tab via yt-dlp first, instaloader fallback when Sheets not configured
+- **Reel filename hashing** (Phase 07): MD5(url).slice(0,12) for stable filenames across fetch cycles
 
 ### Pending Todos
 
-- [ ] Investigate Instagram rate limiting on Pi (workaround: scp from Windows)
+- [x] ~~Investigate Instagram rate limiting on Pi~~ — Fixed in Phase 07: Sheets URLs + yt-dlp replaces instaloader scraping
+- [ ] Install yt-dlp on Pi: `pip3 install yt-dlp`
 - [ ] Replace MindBody sandbox credentials with production API key
 
 ### Blockers/Concerns Carried Forward
 
-None (Instagram fix planned for Phase 7)
+- yt-dlp needs to be installed on Pi before Sheets-based reel downloading works
+- Google Sheets setup (Phase 06 user task) still pending — needed for Sheets-based features
 
 ### Roadmap Evolution
 
@@ -106,5 +111,5 @@ None (Instagram fix planned for Phase 7)
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 06 Plan 01 complete — next is user setup (Google Cloud service account) then Plan 02
-Resume file: .planning/phases/06-google-sheets-foundation/06-01-SUMMARY.md
+Stopped at: Phase 07 Plan 02 complete — ReelsFetcher yt-dlp + Sheets integration done
+Resume file: .planning/phases/07-playlist-sync-instagram-fix/07-02-SUMMARY.md
