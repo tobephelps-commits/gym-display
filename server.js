@@ -28,6 +28,41 @@ app.use('/wod-proxy', createWodProxy(
   () => wodScraper.getLocalStorage()
 ));
 
+// ── Admin Auth Middleware ──
+// Checks Bearer token or ?token= query param against system.admin_token config.
+// If admin_token is not configured, allows all requests (open access for local Pi).
+function adminAuthMiddleware(req, res, next) {
+  const current = configLoader.getConfig();
+  const adminToken = current.system && current.system.admin_token;
+
+  // No token configured — open access
+  if (!adminToken) {
+    return next();
+  }
+
+  // Check Authorization header
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ') && authHeader.slice(7) === adminToken) {
+    return next();
+  }
+
+  // Check query param
+  if (req.query.token === adminToken) {
+    return next();
+  }
+
+  res.status(401).json({ error: 'Unauthorized — invalid or missing admin token' });
+}
+
+// Serve admin static files BEFORE general static middleware
+app.use('/admin', adminAuthMiddleware, express.static(path.join(__dirname, 'public', 'admin'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: function (res) {
+    res.set('Cache-Control', 'no-store');
+  }
+}));
+
 // Serve static files from public/ with no-cache headers (ensures code updates load immediately)
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
@@ -230,6 +265,120 @@ app.get('/api/leaderboard', (req, res) => {
 // Announcements API endpoint
 app.get('/api/announcements', (req, res) => {
   res.json(announcementsService.getAnnouncements());
+});
+
+// ── Admin API Endpoints (protected by auth middleware) ──
+
+// GET /api/admin/status — Aggregate all service statuses
+app.get('/api/admin/status', adminAuthMiddleware, (req, res) => {
+  const zoneState = zoneController.getZoneState();
+  const wodStatus = wodScraper.getStatus();
+  const mbStatus = mindbodyClient.getStatus();
+  const shStatus = sheetsClient.getStatus();
+  const reelsStatus = reelsFetcher.getStatus();
+  const announceData = announcementsService.getAnnouncements();
+
+  res.json({
+    uptime: process.uptime(),
+    zones: {
+      currentZone: zoneState.currentZone,
+      nextZone: zoneState.nextZone,
+      boostActive: zoneController.isBoostActive(),
+      rotationOrder: zoneState.rotationOrder
+    },
+    wod: {
+      status: wodStatus.status,
+      lastLogin: wodStatus.lastScreenshotTime,
+      lastScreenshot: wodStatus.lastScreenshotTime
+    },
+    mindbody: {
+      configured: mbStatus.configured,
+      polling: mbStatus.polling,
+      lastSchedulePoll: mbStatus.lastSchedulePoll,
+      activeClass: mbStatus.activeClass
+    },
+    sheets: {
+      configured: shStatus.configured,
+      polling: shStatus.polling,
+      lastPoll: shStatus.lastPoll,
+      tabs: shStatus.tabs
+    },
+    videos: {
+      count: videoManager.getVideoCount(),
+      source: videoManager.getSource()
+    },
+    reels: {
+      enabled: reelsStatus.enabled,
+      count: reelsStatus.reelsCount
+    },
+    leaderboard: {
+      active: leaderboardService.isActive()
+    },
+    announcements: {
+      active: announcementsService.isActive(),
+      count: announceData.count
+    }
+  });
+});
+
+// GET /api/admin/config/full — Full config with credentials masked
+app.get('/api/admin/config/full', adminAuthMiddleware, (req, res) => {
+  const current = JSON.parse(JSON.stringify(configLoader.getConfig()));
+
+  // Mask sensitive credentials
+  if (current.wodscreen && current.wodscreen.password) {
+    current.wodscreen.password = '***';
+  }
+  if (current.mindbody) {
+    if (current.mindbody.api_key) current.mindbody.api_key = '***';
+    if (current.mindbody.password) current.mindbody.password = '***';
+  }
+  if (current.sheets && current.sheets.credentials_file) {
+    current.sheets.credentials_file = current.sheets.credentials_file; // show path only, no contents
+  }
+  if (current.system && current.system.admin_token) {
+    current.system.admin_token = '***';
+  }
+
+  res.json(current);
+});
+
+// POST /api/admin/config — Update config sections
+app.post('/api/admin/config', adminAuthMiddleware, (req, res) => {
+  try {
+    const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return res.status(400).json({ error: 'Request body must be a JSON object' });
+    }
+    configLoader.saveConfig(body);
+    res.json({ success: true, message: 'Config updated' });
+  } catch (err) {
+    console.error(`[Admin] Config update failed: ${err.message}`);
+    res.status(500).json({ error: 'Config update failed', message: err.message });
+  }
+});
+
+// POST /api/admin/refresh/:service — Trigger manual service refresh
+app.post('/api/admin/refresh/:service', adminAuthMiddleware, async (req, res) => {
+  const service = req.params.service;
+  try {
+    switch (service) {
+      case 'wod':
+        await wodScraper.login();
+        return res.json({ success: true, service, message: 'WOD refresh triggered' });
+      case 'sheets':
+        await sheetsClient.poll();
+        return res.json({ success: true, service, message: 'Sheets poll triggered' });
+      case 'videos':
+        videoManager.resetPlaylist();
+        return res.json({ success: true, service, message: 'Video playlist reset' });
+      default:
+        return res.status(400).json({ error: `Unknown service: ${service}`, supported: ['wod', 'sheets', 'videos'] });
+    }
+  } catch (err) {
+    console.error(`[Admin] Refresh ${service} failed: ${err.message}`);
+    res.status(500).json({ error: `Refresh ${service} failed`, message: err.message });
+  }
 });
 
 // Log config reloads

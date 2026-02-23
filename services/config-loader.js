@@ -78,6 +78,35 @@ class ConfigLoader extends EventEmitter {
   }
 
   /**
+   * Deep-merge updates into current config and write back to config.yaml.
+   * The chokidar watcher will auto-detect the change and trigger reload.
+   * @param {object} updates - Top-level keys to merge into config
+   * @returns {object} The new merged config
+   */
+  saveConfig(updates) {
+    const current = this._config || {};
+    // Deep-merge: top-level keys in updates overwrite
+    const merged = Object.assign({}, current);
+    for (const key of Object.keys(updates)) {
+      if (
+        typeof updates[key] === 'object' &&
+        updates[key] !== null &&
+        !Array.isArray(updates[key]) &&
+        typeof merged[key] === 'object' &&
+        merged[key] !== null &&
+        !Array.isArray(merged[key])
+      ) {
+        merged[key] = Object.assign({}, merged[key], updates[key]);
+      } else {
+        merged[key] = updates[key];
+      }
+    }
+    const yamlStr = yaml.dump(merged, { lineWidth: -1, noRefs: true });
+    fs.writeFileSync(CONFIG_PATH, yamlStr, 'utf8');
+    return merged;
+  }
+
+  /**
    * Stop watching config file.
    */
   stopWatching() {

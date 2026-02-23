@@ -79,3 +79,6 @@ system:
   timezone: "America/Denver"
   screen_off_start: "21:00"
   screen_off_end: "04:30"
+  # Optional: admin panel auth token. If not set, admin panel has open access (fine for local Pi).
+  # Set this if the Pi is accessible from outside the local network.
+  # admin_token: "your_secret_token"
