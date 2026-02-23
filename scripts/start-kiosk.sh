@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Gym Display Kiosk Launcher
-# Waits for the Node.js server, configures display, and launches Chromium in kiosk mode.
+# Gym Display Kiosk Launcher (Wayland/labwc)
+# Called from labwc autostart. Waits for the Node.js server, then launches Chromium.
 
 SERVER_URL="http://localhost:3000/api/health"
 MAX_RETRIES=30
@@ -25,17 +25,17 @@ if [ $retries -eq $MAX_RETRIES ]; then
   exit 1
 fi
 
-# Disable screensaver and power management
-xset s off
-xset -dpms
-xset s noblank
+# Fix Chromium crash recovery nag
+PREFS="$HOME/.config/chromium/Default/Preferences"
+if [ -f "$PREFS" ]; then
+  sed -i 's/"exited_cleanly":false/"exited_cleanly":true/' "$PREFS"
+  sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' "$PREFS"
+fi
 
-# Hide mouse cursor
-unclutter -idle 0.5 -root &
-
-# Launch Chromium in kiosk mode
+# Launch Chromium in kiosk mode (Wayland native)
 exec chromium-browser \
   --kiosk \
+  --ozone-platform=wayland \
   --noerrdialogs \
   --disable-infobars \
   --disable-session-crashed-bubble \
@@ -45,5 +45,4 @@ exec chromium-browser \
   --check-for-update-interval=31536000 \
   --disable-pinch \
   --overscroll-history-navigation=0 \
-  --disable-gpu-compositing \
   http://localhost:3000

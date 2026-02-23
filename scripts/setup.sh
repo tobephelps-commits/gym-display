@@ -4,7 +4,12 @@
 # =============================================================================
 #
 # Transforms a fresh Raspberry Pi OS Lite (Bookworm 64-bit) installation
-# into a fully configured gym display kiosk system.
+# into a fully configured gym display kiosk system using Wayland/labwc.
+#
+# Prerequisites:
+#   - Raspberry Pi OS Lite 64-bit (Bookworm or newer)
+#   - SSH and WiFi configured via Raspberry Pi Imager
+#   - Raspberry Pi Connect already signed in (if using remote access)
 #
 # Usage: sudo bash setup.sh
 #
@@ -41,28 +46,28 @@ echo "  Home:      $REAL_HOME"
 echo "  App dir:   $APP_DIR"
 echo ""
 echo "  This script will:"
-echo "    - Update system packages"
+echo "    - Update package lists"
 echo "    - Install Node.js 20 LTS"
-echo "    - Install Chromium, X11, and display utilities"
+echo "    - Install labwc (Wayland compositor) and Chromium"
 echo "    - Install CEC utilities for HDMI TV control"
+echo "    - Install Python 3 and instaloader (Instagram Reels)"
 echo "    - Install application dependencies (npm)"
 echo "    - Configure console autologin"
-echo "    - Configure X11 kiosk autostart"
+echo "    - Configure labwc kiosk autostart"
 echo "    - Install and enable systemd services and timers"
 echo "    - Configure journald log limits"
 echo "    - Install logrotate configuration"
 echo "    - Secure config.yaml permissions"
-echo "    - Install RPi Connect for remote management"
 echo ""
 echo "============================================================"
 echo ""
 
 # ---------------------------------------------------------------------------
-# 2. System updates
+# 2. Update package lists (no upgrade — avoids breaking existing packages)
 # ---------------------------------------------------------------------------
 
-echo ">>> Updating system packages..."
-apt update && apt upgrade -y
+echo ">>> Updating package lists..."
+apt update
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -81,11 +86,11 @@ echo "    npm:     $(npm --version)"
 echo ""
 
 # ---------------------------------------------------------------------------
-# 4. Install display and kiosk dependencies
+# 4. Install Wayland compositor, Chromium, and display utilities
 # ---------------------------------------------------------------------------
 
-echo ">>> Installing display and kiosk dependencies..."
-apt install -y chromium-browser xserver-xorg x11-xserver-utils xinit unclutter
+echo ">>> Installing labwc (Wayland compositor) and Chromium..."
+apt install -y labwc chromium-browser wlr-randr
 echo ""
 
 # ---------------------------------------------------------------------------
@@ -97,17 +102,17 @@ apt install -y cec-utils
 echo ""
 
 # ---------------------------------------------------------------------------
-# 5b. Install Python 3 and instaloader (for Instagram Reels fetching)
+# 6. Install Python 3 and instaloader (for Instagram Reels fetching)
 # ---------------------------------------------------------------------------
 
 echo ">>> Installing Python 3 and instaloader..."
 apt install -y python3 python3-pip
 pip3 install --break-system-packages instaloader
-echo "    instaloader: $(python3 -m instaloader --version 2>/dev/null || echo 'installed')"
+echo "    instaloader installed"
 echo ""
 
 # ---------------------------------------------------------------------------
-# 6. Install application dependencies
+# 7. Install application dependencies
 # ---------------------------------------------------------------------------
 
 if [ -d "$APP_DIR" ]; then
@@ -122,7 +127,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 7. Configure autologin to console
+# 8. Configure autologin to console
 # ---------------------------------------------------------------------------
 
 echo ">>> Configuring console autologin for $REAL_USER..."
@@ -137,41 +142,58 @@ echo "    Created $AUTOLOGIN_DIR/override.conf"
 echo ""
 
 # ---------------------------------------------------------------------------
-# 8. Configure X11 autostart on login
+# 9. Configure labwc autostart (launches kiosk script)
 # ---------------------------------------------------------------------------
 
-echo ">>> Configuring X11 autostart..."
+echo ">>> Configuring labwc Wayland kiosk autostart..."
 
+LABWC_DIR="$REAL_HOME/.config/labwc"
+mkdir -p "$LABWC_DIR"
+
+cat > "$LABWC_DIR/autostart" <<EOF
+# Gym Display Kiosk — labwc autostart
+# This runs when labwc (Wayland compositor) starts
+
+# Launch the gym display kiosk
+$APP_DIR/scripts/start-kiosk.sh &
+EOF
+
+chown -R "$REAL_USER:$REAL_USER" "$REAL_HOME/.config"
+chmod +x "$LABWC_DIR/autostart"
+echo "    Created $LABWC_DIR/autostart"
+
+# Configure .bash_profile to auto-launch labwc on tty1
 BASH_PROFILE="$REAL_HOME/.bash_profile"
-STARTX_LINE='[ -z "$DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ] && startx -- -nocursor'
+LABWC_LINE='[ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ] && exec labwc'
 
-if [ -f "$BASH_PROFILE" ] && grep -qF "$STARTX_LINE" "$BASH_PROFILE"; then
-    echo "    .bash_profile already contains startx line."
+if [ -f "$BASH_PROFILE" ] && grep -qF "labwc" "$BASH_PROFILE"; then
+    echo "    .bash_profile already contains labwc launch line."
 else
-    echo "$STARTX_LINE" >> "$BASH_PROFILE"
+    # Remove old X11 startx line if present
+    if [ -f "$BASH_PROFILE" ]; then
+        sed -i '/startx/d' "$BASH_PROFILE"
+    fi
+    echo "$LABWC_LINE" >> "$BASH_PROFILE"
     chown "$REAL_USER:$REAL_USER" "$BASH_PROFILE"
-    echo "    Added startx to $BASH_PROFILE"
+    echo "    Added labwc auto-launch to $BASH_PROFILE"
 fi
 
-XINITRC="$REAL_HOME/.xinitrc"
-cat > "$XINITRC" <<EOF
-#!/bin/bash
-exec $APP_DIR/scripts/start-kiosk.sh
-EOF
-chown "$REAL_USER:$REAL_USER" "$XINITRC"
-chmod +x "$XINITRC"
-echo "    Created $XINITRC"
+# Remove old .xinitrc if present (X11 leftover)
+if [ -f "$REAL_HOME/.xinitrc" ]; then
+    rm -f "$REAL_HOME/.xinitrc"
+    echo "    Removed old .xinitrc (X11 leftover)"
+fi
+
 echo ""
 
 # ---------------------------------------------------------------------------
-# 9. Install systemd services and timers
+# 10. Install systemd services and timers
 # ---------------------------------------------------------------------------
 
 echo ">>> Installing systemd services and timers..."
 
 SERVICES=(
     "gym-display.service"
-    "gym-kiosk.service"
     "gym-cec-off.service"
     "gym-cec-off.timer"
     "gym-cec-on.service"
@@ -193,13 +215,20 @@ systemctl daemon-reload
 
 echo ">>> Enabling services and timers..."
 systemctl enable gym-display.service
-systemctl enable gym-kiosk.service
 systemctl enable gym-cec-off.timer
 systemctl enable gym-cec-on.timer
+
+# Remove old gym-kiosk.service if it exists (kiosk now runs via labwc autostart)
+if systemctl is-enabled gym-kiosk.service &>/dev/null; then
+    systemctl disable gym-kiosk.service
+    echo "    Disabled old gym-kiosk.service (kiosk now runs via labwc autostart)"
+fi
+rm -f /etc/systemd/system/gym-kiosk.service
+
 echo ""
 
 # ---------------------------------------------------------------------------
-# 10. Configure journald log limits
+# 11. Configure journald log limits
 # ---------------------------------------------------------------------------
 
 echo ">>> Configuring journald log limits..."
@@ -214,7 +243,7 @@ echo "    Journald limited to 100M / 7 days"
 echo ""
 
 # ---------------------------------------------------------------------------
-# 11. Install logrotate config
+# 12. Install logrotate config
 # ---------------------------------------------------------------------------
 
 echo ">>> Installing logrotate configuration..."
@@ -228,7 +257,7 @@ fi
 echo ""
 
 # ---------------------------------------------------------------------------
-# 12. Set config.yaml permissions
+# 13. Set config.yaml permissions
 # ---------------------------------------------------------------------------
 
 echo ">>> Securing config.yaml permissions..."
@@ -242,7 +271,7 @@ fi
 echo ""
 
 # ---------------------------------------------------------------------------
-# 13. Make scripts executable
+# 14. Make scripts executable
 # ---------------------------------------------------------------------------
 
 echo ">>> Making scripts executable..."
@@ -253,19 +282,39 @@ fi
 echo ""
 
 # ---------------------------------------------------------------------------
-# 14. Install Raspberry Pi Connect
+# 15. Ensure Raspberry Pi Connect is intact
 # ---------------------------------------------------------------------------
 
-echo ">>> Installing RPi Connect for remote management..."
-apt install -y rpi-connect-lite
-systemctl enable --now rpi-connect-lite
-echo "    RPi Connect installed and enabled."
-echo ""
-echo "    IMPORTANT: Run 'rpi-connect signin' to link to your Raspberry Pi account."
+echo ">>> Verifying Raspberry Pi Connect..."
+if dpkg -l | grep -q rpi-connect; then
+    echo "    Raspberry Pi Connect is installed."
+    systemctl enable rpi-connect 2>/dev/null || systemctl enable rpi-connect-lite 2>/dev/null || true
+    echo "    Service enabled."
+else
+    echo "    WARNING: Raspberry Pi Connect not found."
+    echo "    Install it with: sudo apt install rpi-connect"
+    echo "    Then sign in with: rpi-connect signin"
+fi
 echo ""
 
 # ---------------------------------------------------------------------------
-# 15. Final summary
+# 16. Clean up X11 leftovers (if migrating from old setup)
+# ---------------------------------------------------------------------------
+
+echo ">>> Cleaning up X11 leftovers (if any)..."
+# Remove X11 packages if they were installed by a previous setup
+if dpkg -l | grep -q "xserver-xorg-core"; then
+    echo "    Found X11 packages from old setup. Removing..."
+    apt remove -y xserver-xorg xserver-xorg-core xinit x11-xserver-utils unclutter 2>/dev/null || true
+    apt autoremove -y
+    echo "    X11 packages removed."
+else
+    echo "    No X11 leftovers found."
+fi
+echo ""
+
+# ---------------------------------------------------------------------------
+# 17. Final summary
 # ---------------------------------------------------------------------------
 
 echo "============================================================"
@@ -274,30 +323,28 @@ echo "============================================================"
 echo ""
 echo "  Installed:"
 echo "    - Node.js $(node --version)"
-echo "    - Chromium kiosk browser"
-echo "    - X11 display server"
+echo "    - labwc Wayland compositor (kiosk)"
+echo "    - Chromium browser"
+echo "    - Python 3 + instaloader (Instagram Reels)"
 echo "    - CEC utilities (HDMI TV control)"
-echo "    - RPi Connect (remote management)"
-echo "    - Systemd services: gym-display, gym-kiosk"
+echo "    - Systemd service: gym-display (Node.js server)"
 echo "    - Systemd timers: TV off at 21:00, on at 04:30"
 echo "    - Journald limits: 100M / 7 days"
-echo "    - Logrotate: daily rotation, 7-day retention"
+echo ""
+echo "  Kiosk mode:"
+echo "    - Console autologin → labwc (Wayland) → Chromium kiosk"
+echo "    - Compatible with Raspberry Pi Connect"
 echo ""
 echo "  Next steps:"
 echo "    1. Edit config.yaml with your credentials:"
 echo "       nano $APP_DIR/config.yaml"
 echo ""
-echo "    2. Link RPi Connect (for remote access):"
-echo "       rpi-connect signin"
-echo ""
-echo "    3. Reboot to start the display system:"
+echo "    2. Reboot to start the display system:"
 echo "       sudo reboot"
 echo ""
 echo "  Management commands:"
 echo "    sudo systemctl restart gym-display    # Restart server"
-echo "    sudo systemctl restart gym-kiosk      # Restart kiosk"
 echo "    sudo systemctl status gym-display     # Check server status"
 echo "    sudo journalctl -u gym-display -f     # Follow server logs"
-echo "    sudo journalctl -u gym-kiosk -f       # Follow kiosk logs"
 echo ""
 echo "============================================================"

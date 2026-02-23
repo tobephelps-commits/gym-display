@@ -6,7 +6,8 @@ Wants=gym-display.service
 [Service]
 Type=simple
 User=pi
-Environment=DISPLAY=:0
+Environment=WAYLAND_DISPLAY=wayland-1
+Environment=XDG_RUNTIME_DIR=/run/user/1000
 ExecStart=/home/pi/gym-display/scripts/start-kiosk.sh
 Restart=always
 RestartSec=10
