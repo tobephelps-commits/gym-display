@@ -61,6 +61,23 @@
     </div>
   </div>
 
+  <div id="zone-announcements" class="zone zone-announcements">
+    <div id="announcements-loading" class="announcements-state">
+      <p>Loading announcements...</p>
+    </div>
+    <div id="announcements-display" class="announcements-state hidden">
+      <div class="announcements-header">
+        <h1 id="announcements-title">ANNOUNCEMENTS</h1>
+      </div>
+      <div id="announcements-list" class="announcements-list">
+        <!-- Populated dynamically by app.js -->
+      </div>
+    </div>
+    <div id="announcements-empty" class="announcements-state hidden">
+      <p>No announcements</p>
+    </div>
+  </div>
+
   <script src="app.js"></script>
   <script>
     // Load YouTube IFrame API asynchronously so it never blocks page init
