@@ -80,7 +80,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 09-01: TBD (run /gsd:plan-phase 9 to break down)
+- [ ] 09-01: AnnouncementsService Backend + API + Zone Integration
+- [ ] 09-02: Announcements Frontend Zone
 
 #### Phase 10: Web Admin Panel
 
