@@ -55,10 +55,11 @@ Plans:
 **Depends on**: Phase 6
 **Research**: Likely (Instagram rate-limit workarounds, instaloader alternatives)
 **Research topics**: Instagram rate limiting bypass/alternatives, instaloader session handling, proxy options
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
-- [ ] 07-01: TBD (run /gsd:plan-phase 7 to break down)
+- [ ] 07-01: Sheets-Driven YouTube Playlist
+- [ ] 07-02: Instagram Fix via Sheets URLs + yt-dlp
 
 #### Phase 8: Team vs Team Leaderboard Zone
 
