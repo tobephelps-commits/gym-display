@@ -44,6 +44,23 @@
     </div>
   </div>
 
+  <div id="zone-leaderboard" class="zone zone-leaderboard">
+    <div id="leaderboard-loading" class="leaderboard-state">
+      <p>Loading leaderboard...</p>
+    </div>
+    <div id="leaderboard-display" class="leaderboard-state hidden">
+      <div class="leaderboard-header">
+        <h1 id="leaderboard-title">TEAM CHALLENGE</h1>
+      </div>
+      <div id="leaderboard-teams" class="leaderboard-teams">
+        <!-- Populated dynamically by app.js -->
+      </div>
+    </div>
+    <div id="leaderboard-empty" class="leaderboard-state hidden">
+      <p>No active competition</p>
+    </div>
+  </div>
+
   <script src="app.js"></script>
   <script>
     // Load YouTube IFrame API asynchronously so it never blocks page init
