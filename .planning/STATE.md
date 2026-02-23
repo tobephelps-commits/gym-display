@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 ## Current Position
 
 Milestone: v1.1 Command Center
-Phase: 9 of 10 (Announcements Zone) — COMPLETE
-Plan: 2 of 2 in current phase — COMPLETE
-Status: Phase 09 complete — backend + frontend done; ready for Phase 10 (Admin Panel)
-Last activity: 2026-02-23 — Completed 09-02-PLAN.md
+Phase: 10 of 10 (Web Admin Panel) — IN PROGRESS
+Plan: 1 of N in current phase — COMPLETE
+Status: Plan 10-01 complete — admin backend infrastructure + HTML shell done; ready for Plan 10-02 (dashboard page)
+Last activity: 2026-02-23 — Completed 10-01-PLAN.md
 
-Progress: █████████░ 90%
+Progress: █████████▒ 92%
 
 ## Deployment Info
 
@@ -97,6 +97,9 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 - **Announcements priority sort** (Phase 09): Two-tier sort — urgent first, then normal
 - **Announcements poll interval** (Phase 09): 30-second poll while zone displayed, matching leaderboard pattern
 - **Announcements card styling** (Phase 09): Urgent=red border+glow, Normal=blue border; compact mode for >4 cards
+- **Admin open access default** (Phase 10): No auth when admin_token not configured — appropriate for local Pi
+- **Admin token auth** (Phase 10): Bearer header or query param for browser convenience
+- **Admin credential masking** (Phase 10): Masks passwords and API keys in /api/admin/config/full
 
 ### Pending Todos
 
@@ -117,5 +120,5 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 09-02-PLAN.md — Announcements zone fully complete (backend + frontend), ready for Phase 10
-Resume file: .planning/phases/09-announcements-zone/09-02-SUMMARY.md
+Stopped at: Completed 10-01-PLAN.md — Admin panel backend + HTML shell done, ready for Plan 10-02 (dashboard)
+Resume file: .planning/phases/10-web-admin-panel/10-01-SUMMARY.md
