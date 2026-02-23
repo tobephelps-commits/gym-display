@@ -366,6 +366,20 @@ app.post('/api/admin/config', adminAuthMiddleware, (req, res) => {
   }
 });
 
+// POST /api/admin/config/restore — Restore config from backup
+app.post('/api/admin/config/restore', adminAuthMiddleware, (req, res) => {
+  try {
+    const restored = configLoader.restoreBackup();
+    if (!restored) {
+      return res.status(404).json({ error: 'No backup file found. A backup is created each time settings are saved.' });
+    }
+    res.json({ success: true, message: 'Config restored from backup' });
+  } catch (err) {
+    console.error(`[Admin] Config restore failed: ${err.message}`);
+    res.status(500).json({ error: 'Config restore failed', message: err.message });
+  }
+});
+
 // POST /api/admin/refresh/:service — Trigger manual service refresh
 app.post('/api/admin/refresh/:service', adminAuthMiddleware, async (req, res) => {
   const service = req.params.service;
