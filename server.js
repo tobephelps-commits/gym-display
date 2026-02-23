@@ -11,6 +11,7 @@ const videoManager = require('./services/video-manager');
 const reelsFetcher = require('./services/reels-fetcher');
 const wodScraper = require('./services/wod-scraper');
 const mindbodyClient = require('./services/mindbody');
+const sheetsClient = require('./services/sheets-client');
 const { createWodProxy } = require('./services/wod-proxy');
 
 const config = configLoader.getConfig();
@@ -56,6 +57,9 @@ app.get('/api/config', (req, res) => {
     },
     mindbody: {
       configured: !!(current.mindbody && current.mindbody.api_key && current.mindbody.api_key !== 'your_api_key')
+    },
+    sheets: {
+      configured: sheetsClient.getStatus().configured
     },
     system: current.system || {}
   };
@@ -184,6 +188,27 @@ app.get('/api/mindbody/status', (req, res) => {
   res.json(mindbodyClient.getStatus());
 });
 
+// Sheets API endpoints
+app.get('/api/sheets/status', (req, res) => {
+  res.json(sheetsClient.getStatus());
+});
+
+app.get('/api/sheets/tabs', (req, res) => {
+  res.json({ tabs: sheetsClient.getTabNames() });
+});
+
+app.get('/api/sheets/data/:tab', (req, res) => {
+  const tabName = req.params.tab;
+  const tabNames = sheetsClient.getTabNames();
+
+  if (tabNames.length > 0 && !tabNames.includes(tabName)) {
+    return res.status(404).json({ error: `Tab "${tabName}" not found`, available: tabNames });
+  }
+
+  const data = sheetsClient.getTabData(tabName);
+  res.json({ tab: tabName, data, count: data.length });
+});
+
 // Log config reloads
 configLoader.onConfigChange(() => {
   console.log('Config reloaded');
@@ -222,6 +247,14 @@ const server = app.listen(port, bindAddress, () => {
     }
   } catch (err) {
     console.error(`[Server] MindBody initialization failed (non-fatal): ${err.message}`);
+  }
+
+  // Start Google Sheets polling (best-effort — server works without it)
+  try {
+    sheetsClient.startPolling();
+    console.log('[Server] Sheets polling initialized');
+  } catch (err) {
+    console.error(`[Server] Sheets initialization failed (non-fatal): ${err.message}`);
   }
 });
 
