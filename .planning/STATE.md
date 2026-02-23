@@ -5,17 +5,103 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The three-zone rotation (WOD, video, roster) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** v1.0 MVP — UAT Fix Pass
+**Current focus:** Deployment + Video rotation fix
 
 ## Current Position
 
 Milestone: v1.0 MVP
-Phase: 02-wod-display (UAT fix)
-Plan: 02-FIX (fix UAT-001)
-Status: Plan complete — UAT-001 fixed
-Last activity: 2026-02-22 — Completed 02-FIX (WOD authorization popup fix)
+Phase: Post-deployment troubleshooting
+Status: Deployed to Pi, WOD working, video single-item rotation NOT YET WORKING
+Last activity: 2026-02-23 — Deployed to Pi, fixing video rotation
 
-Progress: ██████████ 100%
+Progress: ██████████ 90%
+
+## Deployment Info
+
+### Raspberry Pi Access
+
+- **Tailscale SSH:** `ssh BigBarn@100.120.21.22`
+- **Pi hostname:** bigbarnpi
+- **Pi user:** BigBarn
+- **Pi home:** /home/BigBarn
+- **App dir:** /home/BigBarn/gym-display
+- **Display:** Wayland/labwc (NOT X11 — RPi Connect requires Wayland)
+- **RPi Connect:** Installed and working for screen sharing
+
+### Tailscale Network
+
+- **Pi:** 100.120.21.22 (bigbarnpi)
+- **Windows dev machine:** 100.77.68.99 (desktop-4uqhvr6)
+- **Tailscale SSH** is enabled on the Pi (`--ssh` flag)
+- `tailscaled` is enabled as a system service (persists across reboots)
+
+### GitHub Repo
+
+- **URL:** https://github.com/tobephelps-commits/gym-display
+- **Visibility:** Public (credentials removed from history via filter-branch)
+- **config.yaml** is gitignored — credentials stay local on Pi only
+- **config.example.yaml** is the template (committed)
+
+### Deploy Workflow
+
+```bash
+# From Windows dev machine:
+git push origin master
+
+# Then on Pi (via Tailscale SSH):
+ssh BigBarn@100.120.21.22
+cd ~/gym-display && git pull origin master
+sudo systemctl restart gym-display
+# Kiosk auto-restarts via labwc autostart, or:
+pkill -9 chromium  # labwc autostart will relaunch it
+```
+
+### Service Architecture on Pi
+
+- **gym-display.service** — Node.js server (systemd, auto-restart)
+- **labwc autostart** — Launches Chromium kiosk (`~/.config/labwc/autostart`)
+- **LightDM** — Desktop autologin → labwc Wayland session
+- **rpi-connect** — User service (screen sharing + remote shell)
+- **tailscaled** — System service (SSH access from dev machine)
+- **gym-cec-off.timer / gym-cec-on.timer** — TV power control (21:00 off, 04:30 on)
+
+### Kiosk Launch (manual, from SSH)
+
+```bash
+WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/1000 nohup /home/BigBarn/gym-display/scripts/start-kiosk.sh > /tmp/kiosk.log 2>&1 &
+```
+
+## Active Bug: Video Single-Item Rotation
+
+**Problem:** Videos play back-to-back instead of one-per-rotation.
+
+**What was done:**
+- Rewrote `public/app.js` to use a `mediaQueue` that plays one item per video zone visit
+- Queue cycles: YouTube 1 → YouTube 2 → Reel 1 → Reel 2 → ... → wraps
+- `mediaQueuePos` persists across rotation visits
+- Added `stopVideo()` call and `videoZoneActive = false` before async zone advance
+- Added `Cache-Control: no-store` to Express static serving
+- Verified the correct app.js IS being served (confirmed via curl + md5sum)
+
+**What hasn't worked:**
+- Despite the server serving the correct JS with no-cache headers, videos still play back-to-back
+- YouTube `onStateChange(ENDED)` fires and calls `playNextYouTube()` → `signalVideoZoneComplete()`
+- But somehow a second video still plays before zone advances
+
+**Next steps to investigate:**
+- Use browser DevTools (via Puppeteer or remote debugging) to see actual console output
+- Check if YouTube iframe API `loadVideoById` triggers ENDED for the previous video
+- Check if the zone advance POST actually returns and the zone switch happens
+- Consider using `--remote-debugging-port=9222` on kiosk Chromium for remote DevTools
+- May need to destroy/recreate YouTube player each visit instead of reusing it
+
+## Instagram Reels
+
+- **Method:** instaloader (Python CLI tool, no API key needed)
+- **Account:** @bigbarncrossfit (public, no login required)
+- **Cache:** ~/gym-display/cache/reels/*.mp4
+- **Issue on Pi:** Instagram rate-limiting from Pi's IP (JSON parse errors)
+- **Workaround:** Reels were pre-cached from Windows dev machine; Pi will retry hourly
 
 ## Performance Metrics
 
@@ -24,75 +110,36 @@ Progress: ██████████ 100%
 - Average duration: ~3 min
 - Total execution time: ~0.6 hours
 
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01-foundation | 2 | ~10 min | ~5 min |
-| 02-wod-display | 3 | ~9 min | ~3 min |
-| 03-video-system | 2 | ~6 min | ~3 min |
-| 04-mindbody-integration | 3 | ~11 min | ~3.5 min |
-| 05-deployment-reliability | 3 | ~8 min | ~2.7 min |
-
-**Recent Trend:**
-- Last 5 plans: 05-01, 05-02, 05-03, 02-FIX
-- Trend: Steady
-
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+Recent decisions (2026-02-23):
 
-- Server binds 127.0.0.1 in production, 0.0.0.0 in dev (implemented in 05-01)
-- Frontend uses 30s polling for config updates (simpler than WebSocket for config changes)
-- Zone controller is singleton — single source of truth for rotation state
-- puppeteer-core (not puppeteer) for ARM64 Pi compatibility
-- WodScraper init is best-effort — server runs even if WodScreen fails
-- Daily 4 AM re-login to ensure fresh WOD
-- 10s iframe load timeout before screenshot fallback
-- Pause WOD screenshot refreshes when zone not active
-- YouTube player uses autoplay:0 with manual loadVideoById for reliable playback control
-- play_full mode lets video completion drive zone transitions; fallback_seconds is safety net
-- Video manager is defensive against null config (handles pre-loadConfig state)
-- signalVideoZoneComplete syncs local rotation state with server to prevent drift
-- Token refresh stores new token in memory only (writing to config.yaml would trigger hot-reload loop)
-- Reels use object-fit:cover (vertical video fills horizontal display by cropping sides)
-- Reels zone advance on video ended event after min_display_seconds, not mid-playback
-- MindBody init is best-effort (same pattern as WodScraper) — server runs without credentials
-- MindBody placeholder credential detection skips polling gracefully
-- Display names use "First L." format with ClientId deduplication
-- MindBody token cached 6 days, cleared on 401 for automatic refresh
-- Roster frontend polls every 10s (backend caches at 60s); stale data preferred over error state
-- Athlete grid density: >15 compact (2.2rem), >25 dense (1.8rem), default 2.8rem
-- Boost order: server drives effective rotation order; frontend reads it passively (no client-side boost logic)
-- 30s boost check interval balances responsiveness with minimal overhead
-- Boost check only runs when MindBody is configured
-- cec-client -s -d 1 for reliable HDMI CEC commands (stdin mode, minimal debug)
-- Persistent=true on systemd timers ensures missed triggers fire on boot
-- Logrotate for file logs; journald limits (100M/7day) handled by setup.sh
-- SUDO_USER detection in setup.sh for non-pi username support
-- setup.sh sed-replaces /home/pi and User=pi in systemd units at install time
-- Missing app directory is a warning in setup.sh (can run before git clone)
-- Iframe is "bonus" display mode; screenshot is the reliable WOD path
-- Gym auth detection uses text content matching (defensive, not exact selectors)
-- Screenshot refresh runs as backup even when iframe is active
+- Wayland/labwc REQUIRED (not X11) — RPi Connect screen sharing needs Wayland
+- Tailscale for SSH access to Pi from dev machine (Pi on different network)
+- instaloader for Instagram Reels (no API key, scrapes public profiles)
+- config.yaml gitignored, config.example.yaml committed (credential protection)
+- Static files served with Cache-Control: no-store (prevents stale JS)
+- Puppeteer headless needs --ozone-platform=headless on Wayland systems
+- Chromium kiosk needs --password-store=basic to skip GNOME Keyring prompt
+- LightDM autologin via /etc/lightdm/lightdm.conf.d/50-autologin.conf
+- labwc autostart at ~/.config/labwc/autostart (NOT systemd gym-kiosk.service)
+
+Prior decisions: see .planning/PROJECT.md Key Decisions table
 
 ### Pending Todos
 
-None yet.
+- [ ] Fix video single-item-per-rotation (videos still play back-to-back)
+- [ ] Investigate Instagram rate limiting on Pi (instaloader fails from Pi IP)
 
 ### Blockers/Concerns
 
-None yet.
+- YouTube iframe API may be auto-advancing despite stopVideo() calls
+- May need remote Chrome DevTools debugging to see what's happening in browser
 
 ## Session Continuity
 
-Last session: 2026-02-22
-Stopped at: Completed 02-FIX — Fixed UAT-001 WOD authorization popup (4 root causes)
-Resume file: .planning/phases/02-wod-display/02-FIX-SUMMARY.md
-
-### Roadmap Evolution
-
-- Milestone v1.0 MVP created: Full gym display system, 5 phases (Phase 1-5)
+Last session: 2026-02-23
+Stopped at: Video rotation bug — app.js changes deployed but videos still play back-to-back
+Resume with: `ssh BigBarn@100.120.21.22` to access Pi, troubleshoot video rotation in browser
