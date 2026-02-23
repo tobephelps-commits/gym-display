@@ -58,8 +58,8 @@ Plans:
 **Plans**: 2
 
 Plans:
-- [ ] 07-01: Sheets-Driven YouTube Playlist
-- [ ] 07-02: Instagram Fix via Sheets URLs + yt-dlp
+- [x] 07-01: Sheets-Driven YouTube Playlist — completed 2026-02-23
+- [x] 07-02: Instagram Fix via Sheets URLs + yt-dlp — completed 2026-02-23
 
 #### Phase 8: Team vs Team Leaderboard Zone
 
@@ -105,7 +105,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. MindBody Integration | v1.0 | 3/3 | Complete | 2026-02-21 |
 | 5. Deployment & Reliability | v1.0 | 3/3 | Complete | 2026-02-22 |
 | 6. Google Sheets Foundation | v1.1 | 1/1 | Complete | 2026-02-23 |
-| 7. Playlist Sync + Instagram Fix | v1.1 | 0/? | Not started | - |
+| 7. Playlist Sync + Instagram Fix | v1.1 | 2/2 | Complete | 2026-02-23 |
 | 8. Team vs Team Leaderboard | v1.1 | 0/? | Not started | - |
 | 9. Announcements Zone | v1.1 | 0/? | Not started | - |
 | 10. Web Admin Panel | v1.1 | 0/? | Not started | - |
