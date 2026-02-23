@@ -19,17 +19,561 @@
 
   <main class="admin-content">
     <div id="page-dashboard" class="page-section">
-      <!-- Dashboard content will be populated by Plan 02 -->
-      <p class="placeholder-text">Dashboard loading...</p>
+      <!-- Connection lost banner -->
+      <div id="connection-banner" class="connection-banner hidden">Connection lost — retrying...</div>
+
+      <!-- Zone Status Card (prominent) -->
+      <div class="card zone-card">
+        <div class="card-title">Zone Status</div>
+        <div class="zone-status-row">
+          <div class="zone-current">
+            <span id="zone-name" class="zone-name">--</span>
+            <span id="zone-boost" class="zone-boost hidden">BOOST</span>
+          </div>
+          <div class="zone-next">
+            Next: <span id="zone-next-name">--</span>
+          </div>
+        </div>
+        <div id="zone-rotation" class="zone-rotation"></div>
+        <div class="zone-actions">
+          <button id="btn-advance" class="btn btn-primary btn-sm" onclick="Dashboard.advanceZone()">Advance Zone</button>
+        </div>
+      </div>
+
+      <!-- Service Health Grid -->
+      <div class="dashboard-grid">
+        <!-- WOD Service -->
+        <div class="card service-card">
+          <div class="card-title"><span id="wod-dot" class="status-dot"></span>WOD Service</div>
+          <div class="service-detail">
+            <div>Status: <span id="wod-status">--</span></div>
+            <div>Last login: <span id="wod-last-login">--</span></div>
+            <div>Last screenshot: <span id="wod-last-screenshot">--</span></div>
+          </div>
+          <div class="service-preview">
+            <img id="wod-preview" src="/api/wod/screenshot" alt="WOD Preview" class="wod-thumbnail" onerror="this.style.display='none'" />
+          </div>
+          <div class="service-actions">
+            <button class="btn btn-secondary btn-sm" onclick="Dashboard.refreshService('wod')">Refresh WOD</button>
+          </div>
+        </div>
+
+        <!-- MindBody -->
+        <div class="card service-card">
+          <div class="card-title"><span id="mb-dot" class="status-dot"></span>MindBody</div>
+          <div class="service-detail">
+            <div>Configured: <span id="mb-configured">--</span></div>
+            <div>Polling: <span id="mb-polling">--</span></div>
+            <div>Last poll: <span id="mb-last-poll">--</span></div>
+            <div>Active class: <span id="mb-active-class">--</span></div>
+            <div id="mb-roster-info" class="hidden">
+              Class: <span id="mb-class-name">--</span> &middot; Athletes: <span id="mb-athlete-count">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Google Sheets -->
+        <div class="card service-card">
+          <div class="card-title"><span id="sheets-dot" class="status-dot"></span>Google Sheets</div>
+          <div class="service-detail">
+            <div>Configured: <span id="sheets-configured">--</span></div>
+            <div>Polling: <span id="sheets-polling">--</span></div>
+            <div>Last poll: <span id="sheets-last-poll">--</span></div>
+            <div>Tabs: <span id="sheets-tabs">--</span></div>
+          </div>
+          <div class="service-actions">
+            <button class="btn btn-secondary btn-sm" onclick="Dashboard.refreshService('sheets')">Sync Now</button>
+          </div>
+        </div>
+
+        <!-- Videos -->
+        <div class="card service-card">
+          <div class="card-title"><span id="videos-dot" class="status-dot"></span>Videos</div>
+          <div class="service-detail">
+            <div>Source: <span id="videos-source">--</span></div>
+            <div>Count: <span id="videos-count">0</span></div>
+          </div>
+          <div class="service-actions">
+            <button class="btn btn-secondary btn-sm" onclick="Dashboard.resetPlaylist()">Reset Playlist</button>
+          </div>
+        </div>
+
+        <!-- Reels -->
+        <div class="card service-card">
+          <div class="card-title"><span id="reels-dot" class="status-dot"></span>Reels</div>
+          <div class="service-detail">
+            <div>Enabled: <span id="reels-enabled">--</span></div>
+            <div>Reel count: <span id="reels-count">0</span></div>
+          </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="card service-card">
+          <div class="card-title"><span id="lb-dot" class="status-dot"></span>Leaderboard</div>
+          <div class="service-detail">
+            <div>Active: <span id="lb-active">--</span></div>
+          </div>
+        </div>
+
+        <!-- Announcements -->
+        <div class="card service-card">
+          <div class="card-title"><span id="ann-dot" class="status-dot"></span>Announcements</div>
+          <div class="service-detail">
+            <div>Active: <span id="ann-active">--</span></div>
+            <div>Count: <span id="ann-count">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Info -->
+      <div class="card system-info-card">
+        <div class="card-title">System Info</div>
+        <div class="system-info-row">
+          <div>Uptime: <span id="sys-uptime">--</span></div>
+          <div>Environment: <span id="sys-env">--</span></div>
+          <div>Schedule classes: <span id="sys-schedule-count">0</span></div>
+        </div>
+      </div>
     </div>
     <div id="page-settings" class="page-section hidden">
-      <!-- Settings content will be populated by Plan 03 -->
-      <p class="placeholder-text">Settings loading...</p>
+
+      <!-- Zone Settings Card -->
+      <div class="card settings-card">
+        <h2 class="card-title">Zone Settings</h2>
+
+        <div class="settings-section">
+          <h3 class="settings-subtitle">Rotation Order</h3>
+          <p class="settings-hint">Reorder zones with arrows. Uncheck to exclude from rotation.</p>
+          <ul id="zone-order-list" class="zone-order-list">
+            <!-- Populated by JS -->
+          </ul>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-subtitle">Zone Durations</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="duration-wod">WOD Duration (seconds)</label>
+              <input type="number" id="duration-wod" min="10" max="600" step="1">
+              <span class="field-error" id="error-duration-wod"></span>
+            </div>
+            <div class="form-group">
+              <label for="duration-roster">Roster Duration (seconds)</label>
+              <input type="number" id="duration-roster" min="10" max="600" step="1">
+              <span class="field-error" id="error-duration-roster"></span>
+            </div>
+            <div class="form-group">
+              <label for="duration-leaderboard">Leaderboard Duration (seconds)</label>
+              <input type="number" id="duration-leaderboard" min="10" max="600" step="1">
+              <span class="field-error" id="error-duration-leaderboard"></span>
+            </div>
+            <div class="form-group">
+              <label for="duration-announcements">Announcements Duration (seconds)</label>
+              <input type="number" id="duration-announcements" min="10" max="600" step="1">
+              <span class="field-error" id="error-duration-announcements"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-subtitle">Video Zone</h3>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="video-play-full">
+              Play full video (ignore fixed duration)
+            </label>
+          </div>
+          <div class="form-group">
+            <label for="video-fallback">Fallback Duration (seconds)</label>
+            <input type="number" id="video-fallback" min="10" max="600" step="1">
+            <span class="field-error" id="error-video-fallback"></span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-subtitle">Roster Boost</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="boost-minutes">Boost Before Class (minutes)</label>
+              <input type="number" id="boost-minutes" min="0" max="120" step="1">
+              <span class="field-error" id="error-boost-minutes"></span>
+            </div>
+            <div class="form-group">
+              <label for="boost-frequency">Boost Frequency (multiplier)</label>
+              <input type="number" id="boost-frequency" min="1" max="10" step="1">
+              <span class="field-error" id="error-boost-frequency"></span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="save-zones-btn">Save Zone Settings</button>
+      </div>
+
+      <!-- Video Playlist Card -->
+      <div class="card settings-card">
+        <h2 class="card-title">Video Playlist</h2>
+        <div id="playlist-sheets-msg" class="info-message" style="display:none;">
+          Playlist managed via Google Sheets. Edit videos in the "Playlist" tab of your spreadsheet.
+        </div>
+        <div id="playlist-config-section">
+          <table class="playlist-table" id="playlist-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>URL</th>
+                <th>Enabled</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="playlist-tbody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+          <button class="btn btn-secondary btn-sm" id="add-video-btn" style="margin-top:8px;">+ Add Video</button>
+          <div id="add-video-form" class="add-video-form" style="display:none;">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="new-video-title">Title</label>
+                <input type="text" id="new-video-title" placeholder="Video title">
+              </div>
+              <div class="form-group">
+                <label for="new-video-url">URL</label>
+                <input type="text" id="new-video-url" placeholder="https://...">
+                <span class="field-error" id="error-new-video-url"></span>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" id="confirm-add-video">Add</button>
+            <button class="btn btn-secondary btn-sm" id="cancel-add-video">Cancel</button>
+          </div>
+          <div style="margin-top:12px;">
+            <button class="btn btn-primary" id="save-playlist-btn">Save Playlist</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Settings Card -->
+      <div class="card settings-card">
+        <h2 class="card-title">System Settings</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sys-port">Port (read-only, requires restart)</label>
+            <input type="number" id="sys-port" readonly>
+          </div>
+          <div class="form-group">
+            <label for="sys-log-level">Log Level</label>
+            <select id="sys-log-level">
+              <option value="debug">debug</option>
+              <option value="info">info</option>
+              <option value="warn">warn</option>
+              <option value="error">error</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sys-timezone">Timezone</label>
+            <input type="text" id="sys-timezone" placeholder="America/Denver">
+            <span class="field-error" id="error-sys-timezone"></span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sys-screen-off">Screen Off Time</label>
+            <input type="time" id="sys-screen-off">
+          </div>
+          <div class="form-group">
+            <label for="sys-screen-on">Screen On Time</label>
+            <input type="time" id="sys-screen-on">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sys-admin-token">Admin Token</label>
+          <input type="password" id="sys-admin-token" placeholder="Leave blank for open access">
+          <span class="settings-hint">Current value is masked. Leave blank to keep unchanged.</span>
+        </div>
+
+        <button class="btn btn-primary" id="save-system-btn">Save System Settings</button>
+      </div>
+
+      <!-- Restore Backup -->
+      <div class="card settings-card">
+        <h2 class="card-title">Config Backup</h2>
+        <p class="settings-hint">A backup is created automatically each time settings are saved. Use restore to revert to the previous config.</p>
+        <button class="btn btn-danger" id="restore-backup-btn">Restore Previous Config</button>
+      </div>
+
     </div>
   </main>
 
   <div id="toast" class="toast"></div>
 
   <script src="admin.js"></script>
+  <script>
+  /* ── Dashboard Module ── */
+  (function () {
+    'use strict';
+
+    var api = window.AdminApp.api;
+    var showToast = window.AdminApp.showToast;
+    var formatUptime = window.AdminApp.formatUptime;
+    var formatTimestamp = window.AdminApp.formatTimestamp;
+
+    var pollTimer = null;
+    var connectionLost = false;
+
+    // Zone type color map
+    var zoneColors = {
+      wod: '#e53e3e',
+      video: '#4a9eff',
+      roster: '#48bb78',
+      leaderboard: '#ecc94b',
+      announcements: '#d69e2e',
+      reels: '#9f7aea'
+    };
+
+    // ── Load Dashboard Data ──
+    function loadDashboard() {
+      api('status')
+        .then(function (data) {
+          if (connectionLost) {
+            connectionLost = false;
+            document.getElementById('connection-banner').classList.add('hidden');
+          }
+          updateZoneCard(data.zones);
+          updateServiceCards(data);
+          updateSystemInfo(data);
+        })
+        .catch(function () {
+          if (!connectionLost) {
+            connectionLost = true;
+            document.getElementById('connection-banner').classList.remove('hidden');
+          }
+        });
+    }
+
+    // ── Update Zone Card ──
+    function updateZoneCard(zones) {
+      var nameEl = document.getElementById('zone-name');
+      var nextEl = document.getElementById('zone-next-name');
+      var boostEl = document.getElementById('zone-boost');
+      var rotEl = document.getElementById('zone-rotation');
+
+      var current = zones.currentZone || '--';
+      nameEl.textContent = current.toUpperCase();
+      nameEl.style.color = zoneColors[current] || '#eee';
+
+      nextEl.textContent = (zones.nextZone || '--').toUpperCase();
+
+      if (zones.boostActive) {
+        boostEl.classList.remove('hidden');
+      } else {
+        boostEl.classList.add('hidden');
+      }
+
+      // Rotation pills
+      var order = zones.rotationOrder || [];
+      var html = '';
+      for (var i = 0; i < order.length; i++) {
+        var z = order[i];
+        var isActive = z === current;
+        html += '<span class="zone-pill' + (isActive ? ' active' : '') + '" style="' +
+          (isActive ? 'background:' + (zoneColors[z] || '#4a9eff') + ';color:#fff;' : '') +
+          '">' + z + '</span>';
+      }
+      rotEl.innerHTML = html;
+    }
+
+    // ── Update Service Cards ──
+    function updateServiceCards(data) {
+      // WOD
+      setDot('wod-dot', data.wod.status === 'running' ? 'ok' : (data.wod.status === 'error' ? 'error' : 'warning'));
+      setText('wod-status', data.wod.status || 'unknown');
+      setText('wod-last-login', formatTimestamp(data.wod.lastLogin));
+      setText('wod-last-screenshot', formatTimestamp(data.wod.lastScreenshot));
+      // Refresh the WOD preview image (cache bust)
+      var img = document.getElementById('wod-preview');
+      if (img) {
+        img.style.display = '';
+        img.src = '/api/wod/screenshot?t=' + Date.now();
+      }
+
+      // MindBody
+      var mbConfigured = data.mindbody.configured;
+      setDot('mb-dot', mbConfigured ? (data.mindbody.polling ? 'ok' : 'warning') : 'error');
+      setText('mb-configured', yn(mbConfigured));
+      setText('mb-polling', yn(data.mindbody.polling));
+      setText('mb-last-poll', formatTimestamp(data.mindbody.lastSchedulePoll));
+      setText('mb-active-class', yn(data.mindbody.activeClass));
+      var rosterInfo = document.getElementById('mb-roster-info');
+      if (data.mindbody.roster) {
+        rosterInfo.classList.remove('hidden');
+        setText('mb-class-name', data.mindbody.roster.className || '--');
+        setText('mb-athlete-count', data.mindbody.roster.athleteCount || 0);
+      } else {
+        rosterInfo.classList.add('hidden');
+      }
+
+      // Sheets
+      var shConfigured = data.sheets.configured;
+      setDot('sheets-dot', shConfigured ? (data.sheets.polling ? 'ok' : 'warning') : 'error');
+      setText('sheets-configured', yn(shConfigured));
+      setText('sheets-polling', yn(data.sheets.polling));
+      setText('sheets-last-poll', formatTimestamp(data.sheets.lastPoll));
+      var tabList = data.sheets.tabs;
+      setText('sheets-tabs', tabList && tabList.length > 0 ? tabList.join(', ') : 'none');
+
+      // Videos
+      setDot('videos-dot', data.videos.count > 0 ? 'ok' : 'warning');
+      setText('videos-source', data.videos.source || 'config');
+      setText('videos-count', data.videos.count);
+
+      // Reels
+      setDot('reels-dot', data.reels.enabled ? 'ok' : 'error');
+      setText('reels-enabled', yn(data.reels.enabled));
+      setText('reels-count', data.reels.count || 0);
+
+      // Leaderboard
+      setDot('lb-dot', data.leaderboard.active ? 'ok' : 'error');
+      setText('lb-active', yn(data.leaderboard.active));
+
+      // Announcements
+      setDot('ann-dot', data.announcements.active ? 'ok' : 'error');
+      setText('ann-active', yn(data.announcements.active));
+      setText('ann-count', data.announcements.count || 0);
+    }
+
+    // ── Update System Info ──
+    function updateSystemInfo(data) {
+      setText('sys-uptime', formatUptime(data.uptime));
+      setText('sys-env', data.nodeEnv || 'development');
+      setText('sys-schedule-count', data.mindbody.scheduleCount || 0);
+    }
+
+    // ── Helpers ──
+    function setText(id, val) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = val;
+    }
+
+    function setDot(id, status) {
+      var el = document.getElementById(id);
+      if (el) el.className = 'status-dot ' + status;
+    }
+
+    function yn(val) {
+      return val ? 'Yes' : 'No';
+    }
+
+    // ── Polling ──
+    function startDashboardPolling() {
+      stopDashboardPolling();
+      loadDashboard();
+      pollTimer = setInterval(loadDashboard, 10000);
+    }
+
+    function stopDashboardPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    // ── Button Actions ──
+    function advanceZone() {
+      var btn = document.getElementById('btn-advance');
+      btn.disabled = true;
+      btn.textContent = 'Advancing...';
+
+      fetch('/api/zones/advance', { method: 'POST' })
+        .then(function (r) { return r.json(); })
+        .then(function () {
+          showToast('Zone advanced', 'success');
+          loadDashboard();
+        })
+        .catch(function (err) {
+          showToast('Advance failed: ' + err.message, 'error');
+        })
+        .finally(function () {
+          btn.disabled = false;
+          btn.textContent = 'Advance Zone';
+        });
+    }
+
+    function refreshService(service) {
+      var btn = event.target;
+      var origText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Working...';
+
+      api('refresh/' + service, { method: 'POST' })
+        .then(function (data) {
+          showToast(data.message || (service + ' refreshed'), 'success');
+          loadDashboard();
+        })
+        .catch(function (err) {
+          showToast('Refresh failed: ' + err.message, 'error');
+        })
+        .finally(function () {
+          btn.disabled = false;
+          btn.textContent = origText;
+        });
+    }
+
+    function resetPlaylist() {
+      var btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Resetting...';
+
+      fetch('/api/videos/reset', { method: 'POST' })
+        .then(function (r) { return r.json(); })
+        .then(function () {
+          showToast('Playlist reset', 'success');
+          loadDashboard();
+        })
+        .catch(function (err) {
+          showToast('Reset failed: ' + err.message, 'error');
+        })
+        .finally(function () {
+          btn.disabled = false;
+          btn.textContent = 'Reset Playlist';
+        });
+    }
+
+    // ── Hook into tab switching ──
+    // Start polling when dashboard tab visible, stop when switching away
+    var origSwitchTab = null;
+    var navTabs = document.querySelectorAll('.nav-tab');
+    navTabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var page = tab.getAttribute('data-page');
+        if (page === 'dashboard') {
+          startDashboardPolling();
+        } else {
+          stopDashboardPolling();
+        }
+      });
+    });
+
+    // Initial load if dashboard is visible
+    var initialPage = window.location.hash.replace('#', '') || 'dashboard';
+    if (initialPage === 'dashboard') {
+      startDashboardPolling();
+    }
+
+    // ── Expose to global scope ──
+    window.Dashboard = {
+      advanceZone: advanceZone,
+      refreshService: refreshService,
+      resetPlaylist: resetPlaylist,
+      loadDashboard: loadDashboard,
+      startPolling: startDashboardPolling,
+      stopPolling: stopDashboardPolling
+    };
+  })();
+  </script>
 </body>
 </html>
