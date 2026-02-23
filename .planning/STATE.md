@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** Planning next milestone
+**Current focus:** v1.2 Go Live — production credentials & deployment
 
 ## Current Position
 
-Milestone: v1.1 Command Center — SHIPPED 2026-02-23
-Phase: Not started (next milestone not yet planned)
+Milestone: v1.2 Go Live
+Phase: 11 of 11 (Production Credentials & Deployment)
 Plan: Not started
-Status: Ready to plan next milestone
-Last activity: 2026-02-23 — v1.1 milestone complete
+Status: Ready to plan
+Last activity: 2026-02-23 — Milestone v1.2 created
 
-Progress: ██████████ 100% (v1.0 + v1.1 shipped)
+Progress: ░░░░░░░░░░ 0%
 
 ## Deployment Info
 
@@ -95,16 +95,16 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 
 ### Blockers/Concerns Carried Forward
 
-- yt-dlp needs to be installed on Pi before Sheets-based reel downloading works
-- Google Sheets setup (service account, credentials file) still pending — needed for Sheets-based features
+(Cleared for new milestone — all prior concerns are addressed by v1.2 scope)
 
 ### Roadmap Evolution
 
 - v1.0 MVP shipped: Three-zone rotation system, 5 phases (Phase 1-5)
 - v1.1 Command Center shipped: Google Sheets hub + new zones + admin panel, 5 phases (Phase 6-10)
+- Milestone v1.2 created: Production deployment & credentials, 1 phase (Phase 11)
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: v1.1 milestone archived. All 10 phases (1-10) complete across two milestones.
-Resume file: N/A — ready to plan next milestone
+Stopped at: Milestone v1.2 initialization
+Resume file: None
