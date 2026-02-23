@@ -408,7 +408,7 @@ configLoader.onConfigChange(() => {
   console.log('Config reloaded');
 });
 
-const bindAddress = process.env.NODE_ENV === 'production' ? '127.0.0.1' : '0.0.0.0';
+const bindAddress = '0.0.0.0';
 
 const server = app.listen(port, bindAddress, () => {
   console.log(`Gym Display server running on ${bindAddress}:${port} (${process.env.NODE_ENV || 'development'})`);
