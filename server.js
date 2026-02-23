@@ -25,8 +25,14 @@ app.use('/wod-proxy', createWodProxy(
   () => wodScraper.getLocalStorage()
 ));
 
-// Serve static files from public/
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files from public/ with no-cache headers (ensures code updates load immediately)
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: function (res) {
+    res.set('Cache-Control', 'no-store');
+  }
+}));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
