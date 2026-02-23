@@ -31,6 +31,11 @@ function onYouTubeIframeAPIReady() {
   var leaderboardLastData = null;
   var leaderboardConfigured = false;
 
+  // Announcements state
+  var announcementsPollTimer = null;
+  var announcementsLastData = null;
+  var announcementsConfigured = false;
+
   // Video state
   var videoPlaylist = [];
   var videoIndex = 0;
@@ -592,6 +597,121 @@ function onYouTubeIframeAPIReady() {
     }
   }
 
+  // ─── Announcements zone ──────────────────────────────────────
+
+  /**
+   * Show one announcements-state element, hide all others.
+   */
+  function showAnnouncementsState(stateId) {
+    var states = document.querySelectorAll('.announcements-state');
+    states.forEach(function(el) { el.classList.add('hidden'); });
+    var target = document.getElementById(stateId);
+    if (target) { target.classList.remove('hidden'); }
+  }
+
+  /**
+   * Update the announcements display with fetched data.
+   */
+  function updateAnnouncementsDisplay(data) {
+    if (!data || !data.active || !data.announcements || !data.announcements.length) {
+      showAnnouncementsState('announcements-empty');
+      return;
+    }
+
+    showAnnouncementsState('announcements-display');
+
+    var container = document.getElementById('announcements-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    // Apply compact class if many announcements
+    container.classList.remove('announcements-compact');
+    if (data.announcements.length > 4) {
+      container.classList.add('announcements-compact');
+    }
+
+    data.announcements.forEach(function(announcement) {
+      var card = document.createElement('div');
+      card.className = 'announcement-card';
+      card.setAttribute('data-priority', announcement.priority || 'normal');
+
+      if (announcement.priority === 'urgent') {
+        card.classList.add('announcement-urgent');
+      }
+
+      if (announcement.title) {
+        var titleEl = document.createElement('div');
+        titleEl.className = 'announcement-title';
+        titleEl.textContent = announcement.title;
+        card.appendChild(titleEl);
+      }
+
+      if (announcement.body) {
+        var bodyEl = document.createElement('div');
+        bodyEl.className = 'announcement-body';
+        bodyEl.textContent = announcement.body;
+        card.appendChild(bodyEl);
+      }
+
+      container.appendChild(card);
+    });
+  }
+
+  /**
+   * Poll /api/announcements for updated announcement data.
+   */
+  function pollAnnouncements() {
+    fetch('/api/announcements')
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        updateAnnouncementsDisplay(data);
+        announcementsLastData = data;
+      })
+      .catch(function(err) {
+        console.error('Announcements poll failed:', err);
+        // Keep showing stale data if we have it
+      });
+  }
+
+  /**
+   * Called when announcements zone becomes active.
+   * Skips zone if announcements aren't configured or no active announcements.
+   */
+  function onAnnouncementsZoneActive() {
+    if (!announcementsConfigured) {
+      console.log('Announcements zone: not configured, skipping');
+      setTimeout(advanceZone, 0);
+      return;
+    }
+
+    fetch('/api/announcements')
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (!data || !data.active || !data.announcements || !data.announcements.length) {
+          console.log('Announcements zone: no active announcements, skipping');
+          advanceZone();
+          return;
+        }
+        updateAnnouncementsDisplay(data);
+        announcementsLastData = data;
+        announcementsPollTimer = setInterval(pollAnnouncements, 30000);
+      })
+      .catch(function(err) {
+        console.error('Announcements zone: API error, skipping —', err.message);
+        advanceZone();
+      });
+  }
+
+  /**
+   * Called when announcements zone becomes inactive — stop polling.
+   */
+  function onAnnouncementsZoneInactive() {
+    if (announcementsPollTimer) {
+      clearInterval(announcementsPollTimer);
+      announcementsPollTimer = null;
+    }
+  }
+
   /**
    * Show a zone by name, triggering CSS crossfade transition.
    */
@@ -614,6 +734,7 @@ function onYouTubeIframeAPIReady() {
       if (previousZone === 'video') onVideoZoneInactive();
       if (previousZone === 'roster') onRosterZoneInactive();
       if (previousZone === 'leaderboard') onLeaderboardZoneInactive();
+      if (previousZone === 'announcements') onAnnouncementsZoneInactive();
     }
 
     // Activate new zone
@@ -621,6 +742,7 @@ function onYouTubeIframeAPIReady() {
     if (zoneName === 'video') onVideoZoneActive();
     if (zoneName === 'roster') onRosterZoneActive();
     if (zoneName === 'leaderboard') onLeaderboardZoneActive();
+    if (zoneName === 'announcements') onAnnouncementsZoneActive();
   }
 
   /**
@@ -705,6 +827,11 @@ function onYouTubeIframeAPIReady() {
         // Update leaderboard configuration status
         var lb = config.leaderboard || {};
         leaderboardConfigured = !!lb.active;
+
+        // Update announcements duration and configuration status
+        durations.announcements = ((zones.announcements && zones.announcements.duration_seconds) || 60) * 1000;
+        var ann = config.announcements || {};
+        announcementsConfigured = !!ann.active;
 
         // Log boost state changes
         var boostActive = !!zones.boostActive;
@@ -878,6 +1005,11 @@ function onYouTubeIframeAPIReady() {
         var lb = config.leaderboard || {};
         leaderboardConfigured = !!lb.active;
 
+        // Read announcements configuration status
+        durations.announcements = ((zones.announcements && zones.announcements.duration_seconds) || 60) * 1000;
+        var ann = config.announcements || {};
+        announcementsConfigured = !!ann.active;
+
         // Initialize Reels player
         initReelsPlayer();
 
@@ -896,6 +1028,13 @@ function onYouTubeIframeAPIReady() {
           showLeaderboardState('leaderboard-empty');
         } else {
           showLeaderboardState('leaderboard-loading');
+        }
+
+        // Initialize announcements state
+        if (!announcementsConfigured) {
+          showAnnouncementsState('announcements-empty');
+        } else {
+          showAnnouncementsState('announcements-loading');
         }
 
         // Start with first zone
