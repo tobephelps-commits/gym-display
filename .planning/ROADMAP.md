@@ -77,11 +77,11 @@ Plans:
 **Goal**: New rotation screen that appears in rotation when announcements exist in Sheets tab; disappears from rotation when no active announcements
 **Depends on**: Phase 6
 **Research**: Unlikely (internal patterns, similar to Phase 8)
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
-- [ ] 09-01: AnnouncementsService Backend + API + Zone Integration
-- [ ] 09-02: Announcements Frontend Zone
+- [x] 09-01: AnnouncementsService Backend + API + Zone Integration — completed 2026-02-23
+- [x] 09-02: Announcements Frontend Zone — completed 2026-02-23
 
 #### Phase 10: Web Admin Panel
 
@@ -109,5 +109,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 6. Google Sheets Foundation | v1.1 | 1/1 | Complete | 2026-02-23 |
 | 7. Playlist Sync + Instagram Fix | v1.1 | 2/2 | Complete | 2026-02-23 |
 | 8. Team vs Team Leaderboard | v1.1 | 2/2 | Complete | 2026-02-23 |
-| 9. Announcements Zone | v1.1 | 0/? | Not started | - |
+| 9. Announcements Zone | v1.1 | 2/2 | Complete | 2026-02-23 |
 | 10. Web Admin Panel | v1.1 | 0/? | Not started | - |
