@@ -5,7 +5,7 @@ class ZoneController {
     const config = configLoader.getConfig();
     const zones = config.zones || {};
 
-    this._normalOrder = zones.rotation_order || ['wod', 'video', 'roster', 'leaderboard'];
+    this._normalOrder = zones.rotation_order || ['wod', 'video', 'roster', 'leaderboard', 'announcements'];
     this._rotationOrder = this._normalOrder.slice();
     this._currentIndex = 0;
     this._durations = this._extractDurations(zones);
@@ -17,7 +17,7 @@ class ZoneController {
     // Listen for config changes to update rotation order and durations
     configLoader.onConfigChange((newConfig) => {
       const z = newConfig.zones || {};
-      this._normalOrder = z.rotation_order || ['wod', 'video', 'roster', 'leaderboard'];
+      this._normalOrder = z.rotation_order || ['wod', 'video', 'roster', 'leaderboard', 'announcements'];
       this._durations = this._extractDurations(z);
       this._boostConfig = this._extractBoostConfig(z);
 
@@ -57,7 +57,8 @@ class ZoneController {
       wod: ((zones.wod && zones.wod.duration_seconds) || 120) * 1000,
       video: ((zones.video && zones.video.fallback_seconds) || 180) * 1000,
       roster: ((zones.roster && zones.roster.duration_seconds) || 60) * 1000,
-      leaderboard: ((zones.leaderboard && zones.leaderboard.duration_seconds) || 90) * 1000
+      leaderboard: ((zones.leaderboard && zones.leaderboard.duration_seconds) || 90) * 1000,
+      announcements: ((zones.announcements && zones.announcements.duration_seconds) || 60) * 1000
     };
   }
 

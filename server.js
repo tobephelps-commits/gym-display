@@ -13,6 +13,7 @@ const wodScraper = require('./services/wod-scraper');
 const mindbodyClient = require('./services/mindbody');
 const sheetsClient = require('./services/sheets-client');
 const leaderboardService = require('./services/leaderboard-service');
+const announcementsService = require('./services/announcements-service');
 const { createWodProxy } = require('./services/wod-proxy');
 
 const config = configLoader.getConfig();
@@ -68,6 +69,9 @@ app.get('/api/config', (req, res) => {
     },
     leaderboard: {
       active: leaderboardService.isActive()
+    },
+    announcements: {
+      active: announcementsService.isActive()
     },
     system: current.system || {}
   };
@@ -221,6 +225,11 @@ app.get('/api/sheets/data/:tab', (req, res) => {
 // Leaderboard API endpoint
 app.get('/api/leaderboard', (req, res) => {
   res.json(leaderboardService.getLeaderboard());
+});
+
+// Announcements API endpoint
+app.get('/api/announcements', (req, res) => {
+  res.json(announcementsService.getAnnouncements());
 });
 
 // Log config reloads

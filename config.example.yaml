@@ -12,7 +12,7 @@ wodscreen:
 
 # Display Zone Rotation
 zones:
-  rotation_order: ["wod", "video", "roster", "leaderboard"]
+  rotation_order: ["wod", "video", "roster", "leaderboard", "announcements"]
   wod:
     duration_seconds: 120
   video:
@@ -28,6 +28,11 @@ zones:
   # Zone auto-skips when tab is empty or Sheets not configured
   leaderboard:
     duration_seconds: 90
+  # Announcements Zone: Reads from Sheets "Announcements" tab
+  # Tab columns: Title, Body, Active (TRUE/FALSE), Priority (optional: urgent/normal)
+  # Zone auto-skips when no active announcements or Sheets not configured
+  announcements:
+    duration_seconds: 60
 
 # Video Playlist
 # Primary source: Google Sheets "Playlist" tab (when Sheets is configured)
