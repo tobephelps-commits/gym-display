@@ -44,10 +44,10 @@ See [milestone archive](milestones/v1.0-ROADMAP.md) for full phase details.
 **Depends on**: Previous milestone complete
 **Research**: Likely (Google Sheets API, service account auth setup)
 **Research topics**: Google Sheets API v4, service account credentials, Node.js googleapis client library
-**Plans**: TBD
+**Plans**: 1
 
 Plans:
-- [ ] 06-01: TBD (run /gsd:plan-phase 6 to break down)
+- [x] 06-01: Google Sheets Client & API Endpoints — completed 2026-02-23
 
 #### Phase 7: Playlist Sync + Instagram Fix
 
@@ -103,7 +103,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. Video System | v1.0 | 2/2 | Complete | 2026-02-21 |
 | 4. MindBody Integration | v1.0 | 3/3 | Complete | 2026-02-21 |
 | 5. Deployment & Reliability | v1.0 | 3/3 | Complete | 2026-02-22 |
-| 6. Google Sheets Foundation | v1.1 | 0/? | Not started | - |
+| 6. Google Sheets Foundation | v1.1 | 1/1 | Complete | 2026-02-23 |
 | 7. Playlist Sync + Instagram Fix | v1.1 | 0/? | Not started | - |
 | 8. Team vs Team Leaderboard | v1.1 | 0/? | Not started | - |
 | 9. Announcements Zone | v1.1 | 0/? | Not started | - |
