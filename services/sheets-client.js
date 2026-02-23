@@ -35,8 +35,7 @@ class SheetsClient {
     return !!(
       this.spreadsheetId &&
       this.spreadsheetId !== 'your_spreadsheet_id' &&
-      this.credentialsFile &&
-      this.credentialsFile !== '/home/BigBarn/secrets/google-credentials.json'
+      this.credentialsFile
     );
   }
 
