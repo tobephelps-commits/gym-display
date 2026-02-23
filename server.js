@@ -277,9 +277,12 @@ app.get('/api/admin/status', adminAuthMiddleware, (req, res) => {
   const shStatus = sheetsClient.getStatus();
   const reelsStatus = reelsFetcher.getStatus();
   const announceData = announcementsService.getAnnouncements();
+  const roster = mindbodyClient.getRoster();
+  const schedule = mindbodyClient.getSchedule();
 
   res.json({
     uptime: process.uptime(),
+    nodeEnv: process.env.NODE_ENV || 'development',
     zones: {
       currentZone: zoneState.currentZone,
       nextZone: zoneState.nextZone,
@@ -295,7 +298,12 @@ app.get('/api/admin/status', adminAuthMiddleware, (req, res) => {
       configured: mbStatus.configured,
       polling: mbStatus.polling,
       lastSchedulePoll: mbStatus.lastSchedulePoll,
-      activeClass: mbStatus.activeClass
+      activeClass: mbStatus.activeClass,
+      scheduleCount: schedule.length,
+      roster: roster.classInfo ? {
+        className: roster.classInfo.name,
+        athleteCount: roster.count
+      } : null
     },
     sheets: {
       configured: shStatus.configured,
