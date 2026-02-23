@@ -46,4 +46,5 @@ exec chromium-browser \
   --disable-pinch \
   --overscroll-history-navigation=0 \
   --password-store=basic \
+  --disable-gpu-compositing \
   http://localhost:3000
