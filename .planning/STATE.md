@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 ## Current Position
 
 Milestone: v1.1 Command Center
-Phase: 7 of 10 (Playlist Sync + Instagram Fix)
-Plan: 01 and 02 complete
-Status: Phase 07 complete — VideoManager reads playlist from Sheets (Plan 01), ReelsFetcher downloads from Sheets URLs via yt-dlp (Plan 02). Both fall back gracefully when Sheets not configured.
-Last activity: 2026-02-23 — Phase 07 Plan 01 complete (Plan 02 was already done)
+Phase: 8 of 10 (Team vs Team Leaderboard)
+Plan: 1 of 2 in current phase
+Status: In progress — LeaderboardService backend, API endpoint, and zone integration complete (Plan 01). Frontend rendering remains (Plan 02).
+Last activity: 2026-02-23 — Completed 08-01-PLAN.md
 
-Progress: ██░░░░░░░░ 20%
+Progress: ███░░░░░░░ 30%
 
 ## Deployment Info
 
@@ -91,6 +91,8 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 - **Sheets initial poll delay** (Phase 06): 5-second delay on first poll to avoid Google API cold-start quota spike
 - **Reels source priority** (Phase 07): Sheets Playlist tab via yt-dlp first, instaloader fallback when Sheets not configured
 - **Reel filename hashing** (Phase 07): MD5(url).slice(0,12) for stable filenames across fetch cycles
+- **Leaderboard refresh interval** (Phase 08): 60-second refresh from Sheets, consistent with other Sheets services
+- **Hardcoded team colors** (Phase 08): Green #38a169, Blue #3182ce, Red #e53e3e — matches CONTEXT.md
 
 ### Pending Todos
 
@@ -111,5 +113,5 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 07 complete — both plans done, ready for Phase 08
-Resume file: .planning/phases/07-playlist-sync-instagram-fix/07-01-SUMMARY.md
+Stopped at: Completed 08-01-PLAN.md, ready for 08-02
+Resume file: .planning/phases/08-team-leaderboard/08-01-SUMMARY.md

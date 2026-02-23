@@ -66,10 +66,11 @@ Plans:
 **Goal**: New rotation screen showing competing teams with individual member points; coaches enter points manually in Google Sheets tab; display reads and renders team competition view
 **Depends on**: Phase 6
 **Research**: Unlikely (internal patterns, Sheets integration established in Phase 6)
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
-- [ ] 08-01: TBD (run /gsd:plan-phase 8 to break down)
+- [x] 08-01: LeaderboardService Backend + API + Zone Integration — completed 2026-02-23
+- [ ] 08-02: TBD
 
 #### Phase 9: Announcements Zone
 
@@ -106,6 +107,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 5. Deployment & Reliability | v1.0 | 3/3 | Complete | 2026-02-22 |
 | 6. Google Sheets Foundation | v1.1 | 1/1 | Complete | 2026-02-23 |
 | 7. Playlist Sync + Instagram Fix | v1.1 | 2/2 | Complete | 2026-02-23 |
-| 8. Team vs Team Leaderboard | v1.1 | 0/? | Not started | - |
+| 8. Team vs Team Leaderboard | v1.1 | 1/2 | In progress | - |
 | 9. Announcements Zone | v1.1 | 0/? | Not started | - |
 | 10. Web Admin Panel | v1.1 | 0/? | Not started | - |
