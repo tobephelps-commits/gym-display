@@ -14,7 +14,7 @@
   </div>
 
   <div id="zone-video" class="zone zone-video">
-    <div id="yt-player"></div>
+    <div id="yt-container"></div>
     <video id="reels-player" class="video-display hidden" muted autoplay playsinline></video>
     <div id="video-no-content" class="video-display hidden">No videos configured</div>
   </div>
@@ -44,7 +44,15 @@
     </div>
   </div>
 
-  <script src="https://www.youtube.com/iframe_api"></script>
   <script src="app.js"></script>
+  <script>
+    // Load YouTube IFrame API asynchronously so it never blocks page init
+    (function() {
+      var tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      var firstScript = document.getElementsByTagName('script')[0];
+      firstScript.parentNode.insertBefore(tag, firstScript);
+    })();
+  </script>
 </body>
 </html>

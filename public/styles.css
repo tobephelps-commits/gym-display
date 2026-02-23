@@ -93,21 +93,27 @@ body {
   background: #1a1a2e;
 }
 
-/* YouTube player — fill entire video zone */
-#yt-player {
+/* YouTube player container — player is created/destroyed each zone visit */
+#yt-container {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  background: transparent;
+  overflow: hidden;
 }
 
-#yt-player iframe {
+#yt-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
+  border: none;
 }
 
-/* Reels player — fill entire video zone, crop vertical to fit 16:9 */
+/* Reels player — overlays YouTube player when visible */
 #reels-player {
   position: absolute;
   top: 0;
@@ -116,9 +122,10 @@ body {
   height: 100%;
   object-fit: cover;
   background: #0a1628;
+  z-index: 1;
 }
 
-/* Video zone fallback message */
+/* Video zone fallback message — overlays YouTube player when visible */
 #video-no-content {
   position: absolute;
   top: 0;
@@ -133,6 +140,7 @@ body {
   font-weight: 300;
   letter-spacing: 0.05em;
   background: #0a1628;
+  z-index: 1;
 }
 
 /* Roster zone states */

@@ -2,9 +2,6 @@
 function onYouTubeIframeAPIReady() {
   window._youtubeAPIReady = true;
   console.log('YouTube IFrame API ready');
-  if (window._initYouTubePlayer) {
-    window._initYouTubePlayer();
-  }
 }
 
 (function () {
@@ -33,17 +30,13 @@ function onYouTubeIframeAPIReady() {
   var videoPlaylist = [];
   var videoIndex = 0;
   var ytPlayer = null;
-  var youtubeReady = false;
   var videoZoneActive = false;
 
   // Reels state
   var reelsList = [];
   var currentReelIndex = 0;
   var reelsEnabled = false;
-  var youtubeComplete = false;
   var reelsMinDisplaySeconds = 30;
-  var reelsStartTime = null;
-  var reelsMinReached = false;
 
   // Single-item-per-rotation queue: cycles through all YouTube videos,
   // then all reels, one item per video zone visit.
@@ -51,16 +44,27 @@ function onYouTubeIframeAPIReady() {
   var mediaQueuePos = 0;     // Persists across rotations
 
   /**
-   * Initialize YouTube player instance.
+   * Create a fresh YouTube player for a single video.
+   * Destroys any existing player first, creates a new iframe in the container.
+   * This approach eliminates all stale event issues since no player exists between zone visits.
    */
-  function createYouTubePlayer() {
-    if (ytPlayer) return; // already created
+  function createFreshYouTubePlayer(videoId) {
+    destroyYouTubePlayer();
 
-    ytPlayer = new YT.Player('yt-player', {
+    var container = document.getElementById('yt-container');
+    if (!container) return;
+
+    // Create a fresh div that YT.Player will replace with an iframe
+    var playerDiv = document.createElement('div');
+    playerDiv.id = 'yt-player-inner';
+    container.appendChild(playerDiv);
+
+    ytPlayer = new YT.Player('yt-player-inner', {
       width: '100%',
       height: '100%',
+      videoId: videoId,
       playerVars: {
-        autoplay: 0,
+        autoplay: 1,
         controls: 0,
         modestbranding: 1,
         rel: 0,
@@ -72,29 +76,43 @@ function onYouTubeIframeAPIReady() {
       },
       events: {
         onReady: function (event) {
-          youtubeReady = true;
           event.target.setVolume(80);
-          console.log('YouTube player ready');
+          console.log('YouTube player created and playing');
         },
         onStateChange: function (event) {
           if (event.data === YT.PlayerState.ENDED) {
-            console.log('YouTube video ended');
-            playNextYouTube();
+            if (videoZoneActive) {
+              console.log('YouTube video ended, advancing zone');
+              videoZoneActive = false;
+              signalVideoZoneComplete();
+            }
           }
         },
         onError: function (event) {
           console.error('YouTube player error:', event.data);
-          // Error 101/150 = embedding disabled, skip to next
-          playNextYouTube();
+          if (videoZoneActive) {
+            videoZoneActive = false;
+            signalVideoZoneComplete();
+          }
         }
       }
     });
   }
 
-  // Wire up the YouTube API ready callback
-  window._initYouTubePlayer = createYouTubePlayer;
-  if (window._youtubeAPIReady) {
-    createYouTubePlayer();
+  /**
+   * Destroy the YouTube player completely and clean up the container.
+   * After this, no YouTube iframe exists — no stale events possible.
+   */
+  function destroyYouTubePlayer() {
+    if (ytPlayer) {
+      try { ytPlayer.destroy(); } catch (e) {}
+      ytPlayer = null;
+    }
+    // Remove any leftover elements in the container
+    var container = document.getElementById('yt-container');
+    if (container) {
+      container.innerHTML = '';
+    }
   }
 
   /**
@@ -129,7 +147,6 @@ function onYouTubeIframeAPIReady() {
    */
   function onVideoZoneActive() {
     videoZoneActive = true;
-    youtubeComplete = false;
 
     // Fetch both videos and reels in parallel
     Promise.all([
@@ -137,6 +154,9 @@ function onYouTubeIframeAPIReady() {
       fetch('/api/reels').then(function (res) { return res.json(); })
     ])
       .then(function (results) {
+        // Bail out if zone was deactivated while fetching
+        if (!videoZoneActive) return;
+
         var videoData = results[0];
         var reelsData = results[1];
 
@@ -147,10 +167,8 @@ function onYouTubeIframeAPIReady() {
         refreshMediaQueue();
 
         if (mediaQueue.length === 0) {
-          // No content at all
-          showVideoElement('video-no-content');
-          hideVideoElement('yt-player');
-          hideReelsPlayer();
+          // No content at all — show fallback message
+          showVideoOverlay('video-no-content');
           console.log('No videos configured, showing fallback');
           return;
         }
@@ -160,21 +178,22 @@ function onYouTubeIframeAPIReady() {
         console.log('Video zone: playing item ' + (mediaQueuePos + 1) + '/' + mediaQueue.length + ' (' + item.type + ')');
 
         if (item.type === 'youtube') {
-          showVideoElement('yt-player');
-          hideVideoElement('video-no-content');
-          hideReelsPlayer();
+          // Hide any overlay so YouTube player is visible underneath
+          hideAllVideoOverlays();
 
           var video = videoPlaylist[item.index];
           console.log('Playing YouTube: ' + video.title);
-          if (youtubeReady && ytPlayer) {
-            ytPlayer.loadVideoById(video.videoId);
+
+          if (window._youtubeAPIReady) {
+            createFreshYouTubePlayer(video.videoId);
           } else {
-            console.warn('YouTube player not ready yet, waiting...');
+            console.warn('YouTube API not ready yet');
+            showVideoOverlay('video-no-content');
           }
         } else if (item.type === 'reel') {
-          showReelsPlayer();
-          hideVideoElement('yt-player');
-          hideVideoElement('video-no-content');
+          // Show reels player overlay (covers YouTube container)
+          destroyYouTubePlayer();
+          showVideoOverlay('reels-player');
 
           var reel = reelsList[item.index];
           console.log('Playing Reel: ' + reel.filename);
@@ -186,77 +205,41 @@ function onYouTubeIframeAPIReady() {
       })
       .catch(function (err) {
         console.error('Failed to fetch video/reels data:', err);
-        showVideoElement('video-no-content');
-        hideVideoElement('yt-player');
-        hideReelsPlayer();
+        showVideoOverlay('video-no-content');
       });
   }
 
   /**
-   * Called when video zone becomes inactive — pause players.
+   * Called when video zone becomes inactive — destroy all players.
    */
   function onVideoZoneInactive() {
     videoZoneActive = false;
-    youtubeComplete = false;
 
-    // Stop YouTube completely (not just pause — prevents autoplay of related videos)
-    if (ytPlayer && youtubeReady) {
-      try {
-        ytPlayer.stopVideo();
-      } catch (e) {
-        // Player may not be in a state to stop
-      }
+    // Destroy YouTube player completely (removes iframe from DOM)
+    destroyYouTubePlayer();
+
+    // Pause and clear Reels
+    var reelsVideo = document.getElementById('reels-player');
+    if (reelsVideo) {
+      reelsVideo.pause();
+      reelsVideo.removeAttribute('src');
     }
-
-    // Pause Reels
-    hideReelsPlayer();
   }
 
   /**
-   * Called when the single YouTube video for this rotation ends.
-   * Signals video zone complete to advance to the next zone.
-   */
-  function playNextYouTube() {
-    if (!videoZoneActive) return;
-    // Stop YouTube immediately to prevent autoplay of related videos
-    if (ytPlayer && youtubeReady) {
-      try { ytPlayer.stopVideo(); } catch (e) {}
-    }
-    videoZoneActive = false;
-    console.log('YouTube video ended, advancing zone');
-    signalVideoZoneComplete();
-  }
-
-  /**
-   * Signal that the video zone has finished its playlist.
-   * Tells the zone controller to advance to the next zone.
+   * Signal that the video zone has finished its content.
+   * Advances locally (same as timer-based zones) and syncs with server.
    */
   function signalVideoZoneComplete() {
     console.log('Signaling video zone complete');
-    fetch('/api/zones/advance', { method: 'POST' })
-      .then(function (res) { return res.json(); })
-      .then(function (state) {
-        // The server has advanced; sync local state
-        var newZone = state.currentZone;
-        // Find the index of the new zone in our rotation order
-        var newIndex = rotationOrder.indexOf(newZone);
-        if (newIndex !== -1) {
-          currentIndex = newIndex;
-        }
-        showZone(newZone);
-        scheduleNext();
-      })
-      .catch(function (err) {
-        console.error('Failed to signal video zone complete:', err);
-        // Fallback: advance locally
-        advanceZone();
-      });
+    advanceZone();
   }
 
   /**
-   * Show a video display element.
+   * Show an overlay element inside the video zone (reels-player or video-no-content).
    */
-  function showVideoElement(elementId) {
+  function showVideoOverlay(elementId) {
+    hideAllVideoOverlays();
     var el = document.getElementById(elementId);
     if (el) {
       el.classList.remove('hidden');
@@ -264,13 +247,14 @@ function onYouTubeIframeAPIReady() {
   }
 
   /**
-   * Hide a video display element.
+   * Hide all overlay elements in the video zone.
    */
-  function hideVideoElement(elementId) {
-    var el = document.getElementById(elementId);
-    if (el) {
-      el.classList.add('hidden');
-    }
+  function hideAllVideoOverlays() {
+    var el;
+    el = document.getElementById('reels-player');
+    if (el) el.classList.add('hidden');
+    el = document.getElementById('video-no-content');
+    if (el) el.classList.add('hidden');
   }
 
   /**
@@ -283,6 +267,7 @@ function onYouTubeIframeAPIReady() {
     video.addEventListener('ended', function () {
       if (!videoZoneActive) return;
       console.log('Reel ended, advancing zone');
+      videoZoneActive = false;
       signalVideoZoneComplete();
     });
   }
@@ -301,30 +286,12 @@ function onYouTubeIframeAPIReady() {
         console.error('Reel play failed:', err.message);
         // If play fails, advance zone after a short delay
         setTimeout(function () {
-          if (videoZoneActive) signalVideoZoneComplete();
+          if (videoZoneActive) {
+            videoZoneActive = false;
+            signalVideoZoneComplete();
+          }
         }, 2000);
       });
-    }
-  }
-
-  /**
-   * Show the Reels player, hide YouTube player.
-   */
-  function showReelsPlayer() {
-    hideVideoElement('yt-player');
-    hideVideoElement('video-no-content');
-    showVideoElement('reels-player');
-  }
-
-  /**
-   * Hide and pause the Reels player.
-   */
-  function hideReelsPlayer() {
-    hideVideoElement('reels-player');
-    var video = document.getElementById('reels-player');
-    if (video) {
-      video.pause();
-      video.removeAttribute('src');
     }
   }
 
@@ -361,7 +328,7 @@ function onYouTubeIframeAPIReady() {
       if (data.classInfo.staffName) {
         classMetaEl.textContent = 'Coach: ' + data.classInfo.staffName;
       } else if (data.classInfo.startTime && data.classInfo.endTime) {
-        classMetaEl.textContent = data.classInfo.startTime + ' – ' + data.classInfo.endTime;
+        classMetaEl.textContent = data.classInfo.startTime + ' \u2013 ' + data.classInfo.endTime;
       } else {
         classMetaEl.textContent = '';
       }
@@ -416,11 +383,35 @@ function onYouTubeIframeAPIReady() {
   }
 
   /**
-   * Called when roster zone becomes active — start polling.
+   * Called when roster zone becomes active.
+   * Skips this zone if MindBody isn't configured or no class is in session.
+   * Uses setTimeout to avoid re-entrant advanceZone calls inside showZone.
    */
   function onRosterZoneActive() {
-    pollRoster();
-    rosterPollTimer = setInterval(pollRoster, 10000);
+    if (!mindbodyConfigured) {
+      console.log('Roster zone: MindBody not configured, skipping');
+      setTimeout(advanceZone, 0);
+      return;
+    }
+
+    // Fetch roster data; skip zone if no class in session
+    fetch('/api/roster')
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (!data || !data.classInfo) {
+          console.log('Roster zone: no class in session, skipping');
+          advanceZone();
+          return;
+        }
+        // Class is active — show roster and start polling
+        updateRosterDisplay(data);
+        rosterLastData = data;
+        rosterPollTimer = setInterval(pollRoster, 10000);
+      })
+      .catch(function(err) {
+        console.error('Roster zone: API error, skipping \u2014', err.message);
+        advanceZone();
+      });
   }
 
   /**
@@ -437,8 +428,9 @@ function onYouTubeIframeAPIReady() {
    * Show a zone by name, triggering CSS crossfade transition.
    */
   function showZone(zoneName) {
-    // Track previous active zone for zone visibility optimization
-    var previousZone = rotationOrder[currentIndex !== undefined ? currentIndex : 0];
+    // Deactivate the outgoing zone (based on what's currently active, not currentIndex)
+    var activeEl = document.querySelector('.zone.active');
+    var previousZone = activeEl ? activeEl.id.replace('zone-', '') : null;
 
     var zones = document.querySelectorAll('.zone');
     zones.forEach(function (z) { z.classList.remove('active'); });
@@ -448,30 +440,22 @@ function onYouTubeIframeAPIReady() {
       target.classList.add('active');
     }
 
-    // WOD zone visibility optimization
-    if (zoneName === 'wod') {
-      onWodZoneActive();
-    } else if (previousZone === 'wod') {
-      onWodZoneInactive();
+    // Deactivate previous zone
+    if (previousZone && previousZone !== zoneName) {
+      if (previousZone === 'wod') onWodZoneInactive();
+      if (previousZone === 'video') onVideoZoneInactive();
+      if (previousZone === 'roster') onRosterZoneInactive();
     }
 
-    // Video zone activation/deactivation
-    if (zoneName === 'video') {
-      onVideoZoneActive();
-    } else if (previousZone === 'video') {
-      onVideoZoneInactive();
-    }
-
-    // Roster zone activation/deactivation
-    if (zoneName === 'roster') {
-      onRosterZoneActive();
-    } else if (previousZone === 'roster') {
-      onRosterZoneInactive();
-    }
+    // Activate new zone
+    if (zoneName === 'wod') onWodZoneActive();
+    if (zoneName === 'video') onVideoZoneActive();
+    if (zoneName === 'roster') onRosterZoneActive();
   }
 
   /**
    * Advance to the next zone and schedule the following transition.
+   * Also syncs server-side zone controller to stay in lock-step.
    */
   function advanceZone() {
     const fromZone = rotationOrder[currentIndex];
@@ -481,6 +465,9 @@ function onYouTubeIframeAPIReady() {
     console.log('Zone transition: ' + fromZone + ' \u2192 ' + toZone);
     showZone(toZone);
     scheduleNext();
+
+    // Sync server-side zone controller (fire-and-forget)
+    fetch('/api/zones/advance', { method: 'POST' }).catch(function () {});
   }
 
   /**
@@ -500,8 +487,6 @@ function onYouTubeIframeAPIReady() {
       console.log('Video zone: play_full mode, safety timeout ' + (duration / 1000) + 's');
       rotationTimer = setTimeout(function () {
         console.log('Video zone safety timeout reached, advancing');
-        // Also signal server-side advance
-        fetch('/api/zones/advance', { method: 'POST' }).catch(function () {});
         advanceZone();
       }, duration);
     } else {
@@ -549,7 +534,7 @@ function onYouTubeIframeAPIReady() {
         // Log boost state changes
         var boostActive = !!zones.boostActive;
         if (boostActive !== lastBoostActive) {
-          console.log('Roster boost ' + (boostActive ? 'ACTIVATED' : 'DEACTIVATED') + ' — rotation: [' + rotationOrder.join(', ') + ']');
+          console.log('Roster boost ' + (boostActive ? 'ACTIVATED' : 'DEACTIVATED') + ' \u2014 rotation: [' + rotationOrder.join(', ') + ']');
           lastBoostActive = boostActive;
         }
       })
@@ -590,7 +575,7 @@ function onYouTubeIframeAPIReady() {
     // If iframe doesn't load within 15s, stay on loading (poll will retry)
     var iframeTimeout = setTimeout(function () {
       if (!wodIframeLoaded) {
-        console.log('WOD iframe load timeout — will retry on next poll');
+        console.log('WOD iframe load timeout \u2014 will retry on next poll');
         // Reset src so next poll attempt can retry
         iframe.src = '';
         wodMode = 'loading';
@@ -607,12 +592,12 @@ function onYouTubeIframeAPIReady() {
       wodIframeLoaded = true;
       wodMode = 'iframe';
       showWodElement('wod-iframe');
-      console.log('WOD iframe loaded — live content active');
+      console.log('WOD iframe loaded \u2014 live content active');
     };
 
     iframe.onerror = function () {
       clearTimeout(iframeTimeout);
-      console.log('WOD iframe error — will retry on next poll');
+      console.log('WOD iframe error \u2014 will retry on next poll');
       wodMode = 'loading';
       showWodElement('wod-loading');
     };
