@@ -4,18 +4,18 @@
 
 See: .planning/PROJECT.md (updated 2026-02-23)
 
-**Core value:** The three-zone rotation (WOD, video, roster) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** v1.1 Command Center — Google Sheets hub, new zones, admin panel
+**Core value:** The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cycle reliably and continuously without crashes, stalls, or manual intervention
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Milestone: v1.1 Command Center — COMPLETE
-Phase: 10 of 10 (Web Admin Panel) — COMPLETE
-Plan: 3 of 3 in current phase — ALL COMPLETE
-Status: All phases complete — milestone v1.1 ready to ship
-Last activity: 2026-02-23 — Completed Phase 10 (Web Admin Panel)
+Milestone: v1.1 Command Center — SHIPPED 2026-02-23
+Phase: Not started (next milestone not yet planned)
+Plan: Not started
+Status: Ready to plan next milestone
+Last activity: 2026-02-23 — v1.1 milestone complete
 
-Progress: ██████████ 100%
+Progress: ██████████ 100% (v1.0 + v1.1 shipped)
 
 ## Deployment Info
 
@@ -87,41 +87,24 @@ WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/1000 nohup /home/BigBarn/gym
 
 See PROJECT.md Key Decisions table for full list with outcomes.
 
-- **Sheets credentials_file path** (Phase 06): Use file path to JSON key instead of inline private key to avoid YAML newline escaping issues
-- **Sheets initial poll delay** (Phase 06): 5-second delay on first poll to avoid Google API cold-start quota spike
-- **Reels source priority** (Phase 07): Sheets Playlist tab via yt-dlp first, instaloader fallback when Sheets not configured
-- **Reel filename hashing** (Phase 07): MD5(url).slice(0,12) for stable filenames across fetch cycles
-- **Leaderboard refresh interval** (Phase 08): 60-second refresh from Sheets, consistent with other Sheets services
-- **Hardcoded team colors** (Phase 08): Green #38a169, Blue #3182ce, Red #e53e3e — matches CONTEXT.md
-- **Announcements refresh interval** (Phase 09): 60-second refresh from Sheets, consistent with other Sheets services
-- **Announcements priority sort** (Phase 09): Two-tier sort — urgent first, then normal
-- **Announcements poll interval** (Phase 09): 30-second poll while zone displayed, matching leaderboard pattern
-- **Announcements card styling** (Phase 09): Urgent=red border+glow, Normal=blue border; compact mode for >4 cards
-- **Admin open access default** (Phase 10): No auth when admin_token not configured — appropriate for local Pi
-- **Admin token auth** (Phase 10): Bearer header or query param for browser convenience
-- **Admin credential masking** (Phase 10): Masks passwords and API keys in /api/admin/config/full
-- **Per-section save** (Phase 10): Each settings card saves independently to avoid accidental cross-section changes
-- **Config backup on save** (Phase 10): Automatic one-level backup (config.yaml.bak) provides simple rollback
-- **Config validation** (Phase 10): Rejects invalid zone names, non-positive durations, out-of-range ports before writing
-
 ### Pending Todos
 
-- [x] ~~Investigate Instagram rate limiting on Pi~~ — Fixed in Phase 07: Sheets URLs + yt-dlp replaces instaloader scraping
 - [ ] Install yt-dlp on Pi: `pip3 install yt-dlp`
 - [ ] Replace MindBody sandbox credentials with production API key
+- [ ] Set up Google Sheets service account and credentials file on Pi
 
 ### Blockers/Concerns Carried Forward
 
 - yt-dlp needs to be installed on Pi before Sheets-based reel downloading works
-- Google Sheets setup (Phase 06 user task) still pending — needed for Sheets-based features
+- Google Sheets setup (service account, credentials file) still pending — needed for Sheets-based features
 
 ### Roadmap Evolution
 
 - v1.0 MVP shipped: Three-zone rotation system, 5 phases (Phase 1-5)
-- Milestone v1.1 created: Google Sheets hub + new zones + admin panel, 5 phases (Phase 6-10)
+- v1.1 Command Center shipped: Google Sheets hub + new zones + admin panel, 5 phases (Phase 6-10)
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 10 complete — all 3 plans executed (admin foundation, dashboard, settings). Milestone v1.1 complete.
-Resume file: .planning/phases/10-web-admin-panel/10-03-SUMMARY.md
+Stopped at: v1.1 milestone archived. All 10 phases (1-10) complete across two milestones.
+Resume file: N/A — ready to plan next milestone

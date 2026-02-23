@@ -34,67 +34,18 @@ See [milestone archive](milestones/v1.0-ROADMAP.md) for full phase details.
 
 </details>
 
-### ✅ v1.1 Command Center — SHIPPED 2026-02-23
+<details>
+<summary>v1.1 Command Center (Phases 6-10) — SHIPPED 2026-02-23</summary>
 
-**Milestone Goal:** Google Sheets as central data hub, two new rotation zones (leaderboard + announcements), web admin panel, and Instagram fix
+- [x] Phase 6: Google Sheets Foundation (1/1 plans) — completed 2026-02-23
+- [x] Phase 7: Playlist Sync + Instagram Fix (2/2 plans) — completed 2026-02-23
+- [x] Phase 8: Team vs Team Leaderboard (2/2 plans) — completed 2026-02-23
+- [x] Phase 9: Announcements Zone (2/2 plans) — completed 2026-02-23
+- [x] Phase 10: Web Admin Panel (3/3 plans) — completed 2026-02-23
 
-#### Phase 6: Google Sheets Foundation
+See [milestone archive](milestones/v1.1-ROADMAP.md) for full phase details.
 
-**Goal**: Set up Google Sheets API auth (service account), build API client, establish single Sheet with multiple tabs pattern
-**Depends on**: Previous milestone complete
-**Research**: Likely (Google Sheets API, service account auth setup)
-**Research topics**: Google Sheets API v4, service account credentials, Node.js googleapis client library
-**Plans**: 1
-
-Plans:
-- [x] 06-01: Google Sheets Client & API Endpoints — completed 2026-02-23
-
-#### Phase 7: Playlist Sync + Instagram Fix
-
-**Goal**: Replace config.yaml video playlist with Google Sheets tab; fix Instagram rate-limiting so reels refresh automatically on Pi
-**Depends on**: Phase 6
-**Research**: Likely (Instagram rate-limit workarounds, instaloader alternatives)
-**Research topics**: Instagram rate limiting bypass/alternatives, instaloader session handling, proxy options
-**Plans**: 2
-
-Plans:
-- [x] 07-01: Sheets-Driven YouTube Playlist — completed 2026-02-23
-- [x] 07-02: Instagram Fix via Sheets URLs + yt-dlp — completed 2026-02-23
-
-#### Phase 8: Team vs Team Leaderboard Zone
-
-**Goal**: New rotation screen showing competing teams with individual member points; coaches enter points manually in Google Sheets tab; display reads and renders team competition view
-**Depends on**: Phase 6
-**Research**: Unlikely (internal patterns, Sheets integration established in Phase 6)
-**Plans**: 2
-
-Plans:
-- [x] 08-01: LeaderboardService Backend + API + Zone Integration — completed 2026-02-23
-- [x] 08-02: Leaderboard Frontend Zone — completed 2026-02-23
-
-#### Phase 9: Announcements Zone
-
-**Goal**: New rotation screen that appears in rotation when announcements exist in Sheets tab; disappears from rotation when no active announcements
-**Depends on**: Phase 6
-**Research**: Unlikely (internal patterns, similar to Phase 8)
-**Plans**: 2
-
-Plans:
-- [x] 09-01: AnnouncementsService Backend + API + Zone Integration — completed 2026-02-23
-- [x] 09-02: Announcements Frontend Zone — completed 2026-02-23
-
-#### Phase 10: Web Admin Panel
-
-**Goal**: Browser-based UI to manage config, playlists, settings, and view system status without SSH access to the Pi
-**Depends on**: Phase 7, Phase 8, Phase 9
-**Research**: Likely (web framework choice for admin UI, serving alongside kiosk)
-**Research topics**: Lightweight admin UI framework for Node.js, serving admin alongside existing Express server
-**Plans**: 3
-
-Plans:
-- [x] 10-01: Admin Panel Foundation (Backend + HTML Shell) — completed 2026-02-23
-- [x] 10-02: Status Dashboard with Live Polling — completed 2026-02-23
-- [x] 10-03: Settings Page with Config Editor — completed 2026-02-23
+</details>
 
 ## Progress
 

@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Raspberry Pi 5-based gym display system for a CrossFit box. It drives a wall-mounted 1080p TV, rotating through three full-screen content zones on a timed schedule: today's WOD from WodScreen/Beyond The Whiteboard, a curated playlist of YouTube training videos with Instagram Reels fallback, and a live class roster from the MindBody gym management platform. Headless, auto-starting, crash-recovering, and SSH-configurable via YAML.
+A Raspberry Pi 5-based gym display system for a CrossFit box. It drives a wall-mounted 1080p TV, rotating through five full-screen content zones: today's WOD, a curated playlist of YouTube videos and Instagram Reels, a live class roster from MindBody, a team vs team leaderboard, and gym announcements. Content is managed via Google Sheets as a central data hub, with a web admin panel for configuration and monitoring. Headless, auto-starting, crash-recovering, and configurable via browser or SSH.
 
 ## Core Value
 
@@ -28,29 +28,36 @@ The three-zone rotation (WOD, video, roster) must cycle reliably and continuousl
 - Chromium kiosk mode launcher with GPU compositing fix for Pi/Wayland — v1.0
 - Automated setup script (setup.sh) for Raspberry Pi OS provisioning — v1.0
 - Log rotation and SD card write minimization — v1.0
+- ✓ Google Sheets API foundation with service account auth and multi-tab polling — v1.1
+- ✓ Sheets-driven YouTube playlist sync with config.yaml fallback — v1.1
+- ✓ Instagram reels via yt-dlp from Sheets URLs, replacing rate-limited instaloader — v1.1
+- ✓ Team vs Team leaderboard zone with color-coded cards and rankings — v1.1
+- ✓ Announcements zone with urgent/normal priority and auto-skip — v1.1
+- ✓ Web admin panel with live dashboard, settings editor, config backup/restore — v1.1
 
 ### Active
 
-(None — v1.0 shipped, next milestone not yet planned)
+(None — v1.1 shipped, next milestone not yet planned)
 
 ### Out of Scope
 
-- Web-based admin panel — future enhancement, SSH config is sufficient for v1
-- Google Sheets playlist sync — future enhancement, YAML playlist works for v1
-- Athlete leaderboard / PR display — future enhancement
-- Announcements overlay / ticker — future enhancement
-- Multi-display support — future enhancement, single TV only for v1
+- Multi-display support — future enhancement, single TV only
 - Weather widget — future enhancement
+- Athlete individual PR tracking — future enhancement (leaderboard is team-based)
+- Admin panel user management / multi-user auth — single-token is sufficient for local Pi
 
 ## Context
 
-Shipped v1.0 with 2,907 LOC (JS/HTML/CSS) across 62 files.
-Tech stack: Node.js + Express backend, vanilla HTML/CSS/JS frontend, Puppeteer for WodScreen scraping, YouTube IFrame API for video, instaloader for Instagram Reels, MindBody Public API v6 for roster.
+Shipped v1.1 with 6,398 LOC (JS: 4,559 / HTML: 671 / CSS: 1,168) across 41+ files modified since v1.0.
+Tech stack: Node.js + Express backend, vanilla HTML/CSS/JS frontend, Puppeteer for WodScreen, YouTube IFrame API, yt-dlp for Instagram Reels (replacing instaloader), Google Sheets API v4 for data hub, MindBody Public API v6 for roster.
+Five rotation zones: WOD, video, roster, leaderboard, announcements.
+Web admin panel at /admin for configuration and monitoring.
 Deployed on Raspberry Pi 5 running Raspberry Pi OS (Bookworm) with Wayland/labwc compositor.
 Remote access via Tailscale SSH. Deploy workflow: git push from Windows, git pull on Pi via SSH.
 
 Known issues:
-- Instagram instaloader blocked from Pi's IP (must refresh reels manually from Windows)
+- yt-dlp needs to be installed on Pi (`pip3 install yt-dlp`) before Sheets-based reel downloading works
+- Google Sheets service account setup still pending (needed for Sheets-based features)
 - MindBody using sandbox credentials (needs production API key for real roster data)
 
 ## Constraints
@@ -59,8 +66,8 @@ Known issues:
 - **Display**: Single 1080p TV via HDMI — no multi-display
 - **Platform**: Must run on Raspberry Pi 5 with ARM64 Chromium and Wayland/labwc
 - **Network**: WiFi only — must handle intermittent connectivity gracefully with cached data
-- **Config**: Single YAML file, SSH-editable — no web UI for configuration
-- **Security**: Express binds localhost only, config.yaml chmod 600, tokens in memory only
+- **Config**: YAML file editable via SSH or web admin panel at /admin
+- **Security**: Express binds localhost only, config.yaml chmod 600, admin panel token-gated (open by default on local Pi)
 - **Chromium**: Requires `--disable-gpu-compositing` for YouTube iframe rendering on Pi
 
 ## Key Decisions
@@ -74,9 +81,17 @@ Known issues:
 | Destroy/recreate YouTube player per zone visit | Persistent iframe causes stale postMessage events and autoplay; fresh player eliminates all issues | Good |
 | --disable-gpu-compositing for kiosk | YouTube iframes render white on Pi GPU; software compositing fixes it | Good |
 | Wayland/labwc over X11 | RPi Connect screen sharing requires Wayland compositor | Good |
-| instaloader for Instagram Reels | No API key needed, scrapes public profiles; rate-limited from Pi IP though | Revisit |
+| instaloader for Instagram Reels | No API key needed, scrapes public profiles; rate-limited from Pi IP though | Replaced v1.1 |
 | Tailscale for Pi SSH access | Pi on different network than dev machine; Tailscale provides persistent SSH | Good |
 | YouTube API loaded async | Synchronous script tag blocks page init if YouTube unreachable | Good |
+| Google Sheets as data hub | Coaches can manage content without SSH; single spreadsheet, multiple tabs | Good |
+| credentials_file path for Sheets | Avoids YAML newline escaping issues with inline private key | Good |
+| yt-dlp replacing instaloader | Downloads from explicit URLs instead of scraping; eliminates rate-limit issues | Good |
+| Sheets-first with config fallback | Playlist and reels try Sheets first, fall back to config.yaml gracefully | Good |
+| Hardcoded team colors | Green/Blue/Red matches gym branding; simple, no config needed | Good |
+| Admin open access by default | No auth when admin_token not configured; appropriate for local-only Pi | Good |
+| Per-section admin saves | Each settings card saves independently; avoids accidental cross-section changes | Good |
+| Config backup on save | Automatic one-level backup (config.yaml.bak); simple rollback without complexity | Good |
 
 ---
-*Last updated: 2026-02-23 after v1.0 milestone*
+*Last updated: 2026-02-23 after v1.1 milestone*

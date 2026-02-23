@@ -1,5 +1,33 @@
 # Project Milestones: Gym Display System
 
+## v1.1 Command Center (Shipped: 2026-02-23)
+
+**Delivered:** Google Sheets as central data hub powering two new rotation zones (team leaderboard and announcements), Sheets-driven playlist sync, Instagram reels fix via yt-dlp, and a web admin panel with live dashboard and settings editor.
+
+**Phases completed:** 6-10 (10 plans total)
+
+**Key accomplishments:**
+
+- Google Sheets API foundation with service account auth, polling, and multi-tab data caching
+- Sheets-driven YouTube playlist sync with automatic change detection, config.yaml fallback
+- Instagram reels fix — yt-dlp downloads from Sheets URLs, eliminating rate-limit issues
+- Team vs Team leaderboard zone with color-coded team cards, rankings, and member breakdowns
+- Announcements zone with urgent/normal card styling, auto-skip when empty, priority sorting
+- Web admin panel with live service health dashboard, settings editor, config backup/restore
+
+**Stats:**
+
+- 41 files created/modified (+7,010 lines)
+- 6,398 lines of code total (JS: 4,559 / HTML: 671 / CSS: 1,168)
+- 5 phases, 10 plans, ~20 tasks
+- 1 day (Feb 23, 2026)
+
+**Git range:** `a0159c9` → `be9165f`
+
+**What's next:** Deploy to Pi, set up Google Sheets with service account, install yt-dlp, replace MindBody sandbox credentials with production API key.
+
+---
+
 ## v1.0 MVP (Shipped: 2026-02-23)
 
 **Delivered:** A fully functional Raspberry Pi 5 gym display system rotating through three zones (WOD, YouTube/Reels video, class roster) on a wall-mounted 1080p TV with auto-start, crash recovery, and off-hours TV control.
