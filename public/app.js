@@ -26,6 +26,11 @@ function onYouTubeIframeAPIReady() {
   var rosterLastData = null;
   var mindbodyConfigured = false;
 
+  // Leaderboard state
+  var leaderboardPollTimer = null;
+  var leaderboardLastData = null;
+  var leaderboardConfigured = false;
+
   // Video state
   var videoPlaylist = [];
   var videoIndex = 0;
@@ -424,6 +429,169 @@ function onYouTubeIframeAPIReady() {
     }
   }
 
+  // ─── Leaderboard zone ───────────────────────────────────────
+
+  /**
+   * Show one leaderboard-state element, hide all others.
+   */
+  function showLeaderboardState(stateId) {
+    var states = document.querySelectorAll('.leaderboard-state');
+    states.forEach(function(el) { el.classList.add('hidden'); });
+    var target = document.getElementById(stateId);
+    if (target) { target.classList.remove('hidden'); }
+  }
+
+  /**
+   * Get rank suffix for display (1st, 2nd, 3rd, etc.)
+   */
+  function getRankLabel(rank) {
+    if (rank === 1) return '1st';
+    if (rank === 2) return '2nd';
+    if (rank === 3) return '3rd';
+    return rank + 'th';
+  }
+
+  /**
+   * Update the leaderboard display with fetched data.
+   */
+  function updateLeaderboardDisplay(data) {
+    if (!data || !data.active || !data.teams || !data.teams.length) {
+      showLeaderboardState('leaderboard-empty');
+      return;
+    }
+
+    showLeaderboardState('leaderboard-display');
+
+    var container = document.getElementById('leaderboard-teams');
+    if (!container) return;
+    container.innerHTML = '';
+
+    data.teams.forEach(function(team) {
+      var card = document.createElement('div');
+      card.className = 'leaderboard-team-card';
+      card.style.setProperty('--team-color', team.color || '#888');
+      if (team.rank === 1) {
+        card.classList.add('first-place');
+      }
+
+      // Rank badge
+      var rankEl = document.createElement('div');
+      rankEl.className = 'leaderboard-rank';
+      rankEl.textContent = getRankLabel(team.rank);
+      card.appendChild(rankEl);
+
+      // Team name
+      var nameEl = document.createElement('div');
+      nameEl.className = 'leaderboard-team-name';
+      nameEl.textContent = team.name;
+      card.appendChild(nameEl);
+
+      // Team total
+      var totalEl = document.createElement('div');
+      totalEl.className = 'leaderboard-team-total';
+      totalEl.textContent = team.total;
+      var ptsLabel = document.createElement('span');
+      ptsLabel.className = 'pts-label';
+      ptsLabel.textContent = 'pts';
+      totalEl.appendChild(ptsLabel);
+      card.appendChild(totalEl);
+
+      // Divider
+      var divider = document.createElement('div');
+      divider.className = 'leaderboard-divider';
+      card.appendChild(divider);
+
+      // Members list
+      var membersEl = document.createElement('div');
+      membersEl.className = 'leaderboard-members';
+
+      // Apply density class based on member count
+      var memberCount = team.members ? team.members.length : 0;
+      if (memberCount >= 16) {
+        membersEl.classList.add('leaderboard-members-dense');
+      } else if (memberCount >= 9) {
+        membersEl.classList.add('leaderboard-members-compact');
+      }
+
+      if (team.members) {
+        team.members.forEach(function(member) {
+          var row = document.createElement('div');
+          row.className = 'leaderboard-member-row';
+
+          var memberName = document.createElement('span');
+          memberName.className = 'leaderboard-member-name';
+          memberName.textContent = member.name;
+          row.appendChild(memberName);
+
+          var memberPts = document.createElement('span');
+          memberPts.className = 'leaderboard-member-points';
+          memberPts.textContent = member.points;
+          row.appendChild(memberPts);
+
+          membersEl.appendChild(row);
+        });
+      }
+
+      card.appendChild(membersEl);
+      container.appendChild(card);
+    });
+  }
+
+  /**
+   * Poll /api/leaderboard for updated team standings.
+   */
+  function pollLeaderboard() {
+    fetch('/api/leaderboard')
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        updateLeaderboardDisplay(data);
+        leaderboardLastData = data;
+      })
+      .catch(function(err) {
+        console.error('Leaderboard poll failed:', err);
+        // Keep showing stale data if we have it
+      });
+  }
+
+  /**
+   * Called when leaderboard zone becomes active.
+   * Skips zone if leaderboard isn't configured.
+   */
+  function onLeaderboardZoneActive() {
+    if (!leaderboardConfigured) {
+      console.log('Leaderboard zone: not configured, skipping');
+      setTimeout(advanceZone, 0);
+      return;
+    }
+
+    fetch('/api/leaderboard')
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (!data || !data.active || !data.teams || !data.teams.length) {
+          console.log('Leaderboard zone: no active competition, skipping');
+          advanceZone();
+          return;
+        }
+        updateLeaderboardDisplay(data);
+        leaderboardLastData = data;
+        leaderboardPollTimer = setInterval(pollLeaderboard, 30000);
+      })
+      .catch(function(err) {
+        console.error('Leaderboard zone: API error, skipping —', err.message);
+        advanceZone();
+      });
+  }
+
+  /**
+   * Called when leaderboard zone becomes inactive — stop polling.
+   */
+  function onLeaderboardZoneInactive() {
+    if (leaderboardPollTimer) {
+      clearInterval(leaderboardPollTimer);
+      leaderboardPollTimer = null;
+    }
+  }
+
   /**
    * Show a zone by name, triggering CSS crossfade transition.
    */
@@ -445,12 +613,14 @@ function onYouTubeIframeAPIReady() {
       if (previousZone === 'wod') onWodZoneInactive();
       if (previousZone === 'video') onVideoZoneInactive();
       if (previousZone === 'roster') onRosterZoneInactive();
+      if (previousZone === 'leaderboard') onLeaderboardZoneInactive();
     }
 
     // Activate new zone
     if (zoneName === 'wod') onWodZoneActive();
     if (zoneName === 'video') onVideoZoneActive();
     if (zoneName === 'roster') onRosterZoneActive();
+    if (zoneName === 'leaderboard') onLeaderboardZoneActive();
   }
 
   /**
@@ -519,6 +689,7 @@ function onYouTubeIframeAPIReady() {
         durations.wod = ((zones.wod && zones.wod.duration_seconds) || 120) * 1000;
         durations.video = ((zones.video && zones.video.fallback_seconds) || 180) * 1000;
         durations.roster = ((zones.roster && zones.roster.duration_seconds) || 60) * 1000;
+        durations.leaderboard = ((zones.leaderboard && zones.leaderboard.duration_seconds) || 90) * 1000;
 
         // Update play_full setting
         videoPlayFull = !!(zones.video && zones.video.play_full);
@@ -530,6 +701,10 @@ function onYouTubeIframeAPIReady() {
         // Update MindBody configuration status
         var mb = config.mindbody || {};
         mindbodyConfigured = !!mb.configured;
+
+        // Update leaderboard configuration status
+        var lb = config.leaderboard || {};
+        leaderboardConfigured = !!lb.active;
 
         // Log boost state changes
         var boostActive = !!zones.boostActive;
@@ -686,6 +861,7 @@ function onYouTubeIframeAPIReady() {
         durations.wod = ((zones.wod && zones.wod.duration_seconds) || 120) * 1000;
         durations.video = ((zones.video && zones.video.fallback_seconds) || 180) * 1000;
         durations.roster = ((zones.roster && zones.roster.duration_seconds) || 60) * 1000;
+        durations.leaderboard = ((zones.leaderboard && zones.leaderboard.duration_seconds) || 90) * 1000;
 
         // Read play_full setting
         videoPlayFull = !!(zones.video && zones.video.play_full);
@@ -698,6 +874,10 @@ function onYouTubeIframeAPIReady() {
         var mb = config.mindbody || {};
         mindbodyConfigured = !!mb.configured;
 
+        // Read leaderboard configuration status
+        var lb = config.leaderboard || {};
+        leaderboardConfigured = !!lb.active;
+
         // Initialize Reels player
         initReelsPlayer();
 
@@ -709,6 +889,13 @@ function onYouTubeIframeAPIReady() {
           showRosterState('roster-error');
         } else {
           showRosterState('roster-loading');
+        }
+
+        // Initialize leaderboard state
+        if (!leaderboardConfigured) {
+          showLeaderboardState('leaderboard-empty');
+        } else {
+          showLeaderboardState('leaderboard-loading');
         }
 
         // Start with first zone
