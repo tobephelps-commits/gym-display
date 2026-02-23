@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 ## Current Position
 
 Milestone: v1.1 Command Center
-Phase: 8 of 10 (Team vs Team Leaderboard)
-Plan: 2 of 2 in current phase
-Status: Phase complete — backend service, API, zone-controller, and frontend all done
-Last activity: 2026-02-23 — Completed 08-02-PLAN.md
+Phase: 9 of 10 (Announcements Zone)
+Plan: 1 of 2 in current phase
+Status: Plan 01 complete — backend service, API, zone-controller integration done; frontend next
+Last activity: 2026-02-23 — Completed 09-01-PLAN.md
 
-Progress: ████░░░░░░ 40%
+Progress: █████░░░░░ 50%
 
 ## Deployment Info
 
@@ -93,6 +93,8 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 - **Reel filename hashing** (Phase 07): MD5(url).slice(0,12) for stable filenames across fetch cycles
 - **Leaderboard refresh interval** (Phase 08): 60-second refresh from Sheets, consistent with other Sheets services
 - **Hardcoded team colors** (Phase 08): Green #38a169, Blue #3182ce, Red #e53e3e — matches CONTEXT.md
+- **Announcements refresh interval** (Phase 09): 60-second refresh from Sheets, consistent with other Sheets services
+- **Announcements priority sort** (Phase 09): Two-tier sort — urgent first, then normal
 
 ### Pending Todos
 
@@ -113,5 +115,5 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 08-02-PLAN.md — Phase 8 complete, ready for Phase 9
-Resume file: .planning/phases/08-team-leaderboard/08-02-SUMMARY.md
+Stopped at: Completed 09-01-PLAN.md — Announcements backend done, ready for 09-02 frontend
+Resume file: .planning/phases/09-announcements-zone/09-01-SUMMARY.md
