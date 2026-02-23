@@ -49,6 +49,13 @@ instagram:
   fetch_interval_minutes: 60
   min_display_seconds: 30
 
+# Google Sheets Integration (data hub for leaderboard, announcements, playlists)
+sheets:
+  spreadsheet_id: "your_spreadsheet_id"
+  service_account_email: "your-service@project-id.iam.gserviceaccount.com"
+  credentials_file: "/home/BigBarn/secrets/google-credentials.json"
+  poll_interval_minutes: 5
+
 # System
 system:
   port: 3000
