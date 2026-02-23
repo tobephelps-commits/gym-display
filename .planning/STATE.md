@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 
 Milestone: v1.1 Command Center
 Phase: 7 of 10 (Playlist Sync + Instagram Fix)
-Plan: 02 complete
-Status: Plan 02 done — ReelsFetcher downloads from Sheets URLs via yt-dlp, falls back to instaloader. yt-dlp install needed on Pi.
-Last activity: 2026-02-23 — Phase 07 Plan 02 complete
+Plan: 01 and 02 complete
+Status: Phase 07 complete — VideoManager reads playlist from Sheets (Plan 01), ReelsFetcher downloads from Sheets URLs via yt-dlp (Plan 02). Both fall back gracefully when Sheets not configured.
+Last activity: 2026-02-23 — Phase 07 Plan 01 complete (Plan 02 was already done)
 
 Progress: ██░░░░░░░░ 20%
 
@@ -111,5 +111,5 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 07 Plan 02 complete — ReelsFetcher yt-dlp + Sheets integration done
-Resume file: .planning/phases/07-playlist-sync-instagram-fix/07-02-SUMMARY.md
+Stopped at: Phase 07 complete — both plans done, ready for Phase 08
+Resume file: .planning/phases/07-playlist-sync-instagram-fix/07-01-SUMMARY.md
