@@ -36,6 +36,9 @@ function onYouTubeIframeAPIReady() {
   var announcementsLastData = null;
   var announcementsConfigured = false;
 
+  // Admin advance tracking
+  var lastAdvanceVersion = 0;
+
   // Video state
   var videoPlaylist = [];
   var videoIndex = 0;
@@ -764,8 +767,8 @@ function onYouTubeIframeAPIReady() {
     showZone(toZone);
     scheduleNext();
 
-    // Sync server-side zone controller (fire-and-forget)
-    fetch('/api/zones/advance', { method: 'POST' }).catch(function () {});
+    // Sync server-side zone controller (fire-and-forget, marked as kiosk to not bump admin version)
+    fetch('/api/zones/advance?source=kiosk', { method: 'POST' }).catch(function () {});
   }
 
   /**
@@ -791,6 +794,29 @@ function onYouTubeIframeAPIReady() {
       // Standard fixed timer
       rotationTimer = setTimeout(advanceZone, duration);
     }
+  }
+
+  /**
+   * Poll server zone state to detect admin-triggered advances.
+   */
+  function pollZoneState() {
+    fetch('/api/zones')
+      .then(function(res) { return res.json(); })
+      .then(function(state) {
+        if (state.advanceVersion && state.advanceVersion > lastAdvanceVersion) {
+          lastAdvanceVersion = state.advanceVersion;
+          // Admin advanced — jump to server's current zone
+          var serverZone = state.currentZone;
+          var idx = rotationOrder.indexOf(serverZone);
+          if (idx !== -1 && idx !== currentIndex) {
+            console.log('Admin advance detected — jumping to: ' + serverZone);
+            currentIndex = idx;
+            showZone(serverZone);
+            scheduleNext();
+          }
+        }
+      })
+      .catch(function() {});
   }
 
   /**
@@ -1052,6 +1078,8 @@ function onYouTubeIframeAPIReady() {
 
         // Poll for config changes every 30 seconds
         setInterval(fetchConfig, 30000);
+        // Poll for admin zone advances every 2 seconds
+        setInterval(pollZoneState, 2000);
       })
       .catch(function (err) {
         console.error('Initial config fetch failed:', err);
@@ -1059,6 +1087,7 @@ function onYouTubeIframeAPIReady() {
         showZone(rotationOrder[0]);
         scheduleNext();
         setInterval(fetchConfig, 30000);
+        setInterval(pollZoneState, 2000);
       });
   }
 

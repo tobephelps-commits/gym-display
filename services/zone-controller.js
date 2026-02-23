@@ -14,6 +14,9 @@ class ZoneController {
     this._boostActive = false;
     this._boostConfig = this._extractBoostConfig(zones);
 
+    // Admin advance counter — increments when admin triggers zone change
+    this._advanceVersion = 0;
+
     // Listen for config changes to update rotation order and durations
     configLoader.onConfigChange((newConfig) => {
       const z = newConfig.zones || {};
@@ -189,17 +192,21 @@ class ZoneController {
       nextZone,
       durationMs: this._durations[currentZone] || 60000,
       rotationOrder: this._rotationOrder,
-      playFull
+      playFull,
+      advanceVersion: this._advanceVersion
     };
   }
 
   /**
    * Advance to the next zone in rotation order.
    */
-  advanceZone() {
+  advanceZone(fromAdmin = false) {
     this._currentIndex = (this._currentIndex + 1) % this._rotationOrder.length;
+    if (fromAdmin) {
+      this._advanceVersion++;
+    }
     const state = this.getZoneState();
-    console.log(`Zone advanced to: ${state.currentZone}`);
+    console.log(`Zone advanced to: ${state.currentZone}${fromAdmin ? ' (admin)' : ''}`);
     return state;
   }
 }

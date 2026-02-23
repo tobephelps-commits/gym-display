@@ -127,7 +127,8 @@ app.get('/api/zones/current', (req, res) => {
 });
 
 app.post('/api/zones/advance', (req, res) => {
-  const state = zoneController.advanceZone();
+  const fromAdmin = req.query.source !== 'kiosk';
+  const state = zoneController.advanceZone(fromAdmin);
   res.json(state);
 });
 
