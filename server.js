@@ -388,12 +388,15 @@ app.post('/api/admin/refresh/:service', adminAuthMiddleware, async (req, res) =>
     switch (service) {
       case 'wod':
         await wodScraper.login();
+        zoneController.bumpRefreshVersion();
         return res.json({ success: true, service, message: 'WOD refresh triggered' });
       case 'sheets':
         await sheetsClient.poll();
+        zoneController.bumpRefreshVersion();
         return res.json({ success: true, service, message: 'Sheets poll triggered' });
       case 'videos':
         videoManager.resetPlaylist();
+        zoneController.bumpRefreshVersion();
         return res.json({ success: true, service, message: 'Video playlist reset' });
       default:
         return res.status(400).json({ error: `Unknown service: ${service}`, supported: ['wod', 'sheets', 'videos'] });

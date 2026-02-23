@@ -36,8 +36,9 @@ function onYouTubeIframeAPIReady() {
   var announcementsLastData = null;
   var announcementsConfigured = false;
 
-  // Admin advance tracking
+  // Admin advance/refresh tracking
   var lastAdvanceVersion = 0;
+  var lastRefreshVersion = 0;
 
   // Video state
   var videoPlaylist = [];
@@ -814,6 +815,14 @@ function onYouTubeIframeAPIReady() {
             showZone(serverZone);
             scheduleNext();
           }
+        }
+        if (state.refreshVersion && state.refreshVersion > lastRefreshVersion) {
+          lastRefreshVersion = state.refreshVersion;
+          // Admin refreshed a service — reload current zone data
+          var zone = rotationOrder[currentIndex];
+          console.log('Admin refresh detected — reloading zone: ' + zone);
+          showZone(zone);
+          scheduleNext();
         }
       })
       .catch(function() {});

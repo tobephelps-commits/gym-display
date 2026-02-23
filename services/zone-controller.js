@@ -16,6 +16,8 @@ class ZoneController {
 
     // Admin advance counter — increments when admin triggers zone change
     this._advanceVersion = 0;
+    // Admin refresh counter — increments when admin triggers service refresh
+    this._refreshVersion = 0;
 
     // Listen for config changes to update rotation order and durations
     configLoader.onConfigChange((newConfig) => {
@@ -193,13 +195,18 @@ class ZoneController {
       durationMs: this._durations[currentZone] || 60000,
       rotationOrder: this._rotationOrder,
       playFull,
-      advanceVersion: this._advanceVersion
+      advanceVersion: this._advanceVersion,
+      refreshVersion: this._refreshVersion
     };
   }
 
   /**
    * Advance to the next zone in rotation order.
    */
+  bumpRefreshVersion() {
+    this._refreshVersion++;
+  }
+
   advanceZone(fromAdmin = false) {
     this._currentIndex = (this._currentIndex + 1) % this._rotationOrder.length;
     if (fromAdmin) {
