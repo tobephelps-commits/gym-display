@@ -5,16 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-23)
 
 **Core value:** The three-zone rotation (WOD, video, roster) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** v1.0 shipped — monitoring stability
+**Current focus:** v1.1 Command Center — Google Sheets hub, new zones, admin panel
 
 ## Current Position
 
-Milestone: v1.0 MVP — SHIPPED
-Phase: All phases complete (1-5)
-Status: Deployed and running on Raspberry Pi 5
-Last activity: 2026-02-23 — v1.0 milestone complete
+Milestone: v1.1 Command Center
+Phase: 6 of 10 (Google Sheets Foundation)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-02-23 — Milestone v1.1 created
 
-Progress: ██████████ 100%
+Progress: ░░░░░░░░░░ 0%
 
 ## Deployment Info
 
@@ -90,12 +91,17 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 - [ ] Investigate Instagram rate limiting on Pi (workaround: scp from Windows)
 - [ ] Replace MindBody sandbox credentials with production API key
 
-### Blockers/Concerns
+### Blockers/Concerns Carried Forward
 
-- Instagram instaloader blocked from Pi's IP — must refresh reels from Windows manually
+None (Instagram fix planned for Phase 7)
+
+### Roadmap Evolution
+
+- v1.0 MVP shipped: Three-zone rotation system, 5 phases (Phase 1-5)
+- Milestone v1.1 created: Google Sheets hub + new zones + admin panel, 5 phases (Phase 6-10)
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: v1.0 milestone complete, all zones working
-Resume with: System is running. Monitor for stability. Refresh reels from Windows periodically.
+Stopped at: Milestone v1.1 initialization
+Resume file: None
