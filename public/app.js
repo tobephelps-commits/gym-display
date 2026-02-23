@@ -45,6 +45,11 @@ function onYouTubeIframeAPIReady() {
   var reelsStartTime = null;
   var reelsMinReached = false;
 
+  // Single-item-per-rotation queue: cycles through all YouTube videos,
+  // then all reels, one item per video zone visit.
+  var mediaQueue = [];       // Array of { type: 'youtube'|'reel', index: N }
+  var mediaQueuePos = 0;     // Persists across rotations
+
   /**
    * Initialize YouTube player instance.
    */
@@ -93,8 +98,34 @@ function onYouTubeIframeAPIReady() {
   }
 
   /**
-   * Called when video zone becomes active — fetch playlist and reels, start playing.
-   * Two-phase logic: YouTube first (with audio), then Reels (muted) as fallback.
+   * Build or refresh the media queue from current playlists/reels.
+   * Queue order: all YouTube videos first, then all reels.
+   * Only rebuilds if content has changed (avoids resetting position).
+   */
+  function refreshMediaQueue() {
+    var newQueue = [];
+
+    for (var i = 0; i < videoPlaylist.length; i++) {
+      newQueue.push({ type: 'youtube', index: i });
+    }
+    if (reelsEnabled) {
+      for (var j = 0; j < reelsList.length; j++) {
+        newQueue.push({ type: 'reel', index: j });
+      }
+    }
+
+    // Only reset position if queue content changed
+    if (JSON.stringify(newQueue) !== JSON.stringify(mediaQueue)) {
+      mediaQueue = newQueue;
+      if (mediaQueuePos >= mediaQueue.length) {
+        mediaQueuePos = 0;
+      }
+    }
+  }
+
+  /**
+   * Called when video zone becomes active — plays ONE item per rotation visit.
+   * Cycles through: YouTube video 1, YouTube video 2, ..., Reel 1, Reel 2, ..., repeat.
    */
   function onVideoZoneActive() {
     videoZoneActive = true;
@@ -110,41 +141,48 @@ function onYouTubeIframeAPIReady() {
         var reelsData = results[1];
 
         videoPlaylist = videoData.videos || [];
-        videoIndex = 0;
         reelsList = reelsData.reels || [];
         reelsEnabled = reelsData.enabled || false;
 
-        // Reset server-side playlist index
-        fetch('/api/videos/reset', { method: 'POST' });
+        refreshMediaQueue();
 
-        var hasYouTube = videoPlaylist.length > 0;
-        var hasReels = reelsEnabled && reelsList.length > 0;
-
-        if (hasYouTube) {
-          // Phase 1: Show YouTube player, start playlist
-          showVideoElement('yt-player');
-          hideVideoElement('video-no-content');
-          hideReelsPlayer();
-
-          var firstVideo = videoPlaylist[0];
-          console.log('YouTube started: ' + videoPlaylist.length + ' videos');
-          if (youtubeReady && ytPlayer) {
-            ytPlayer.loadVideoById(firstVideo.videoId);
-          } else {
-            console.warn('YouTube player not ready yet, waiting...');
-          }
-        } else if (hasReels) {
-          // No YouTube, go straight to Reels
-          console.log('No YouTube videos, starting Reels directly: ' + reelsList.length + ' reels');
-          showReelsPlayer();
-          startReelsPlayback();
-        } else {
+        if (mediaQueue.length === 0) {
           // No content at all
           showVideoElement('video-no-content');
           hideVideoElement('yt-player');
           hideReelsPlayer();
           console.log('No videos configured, showing fallback');
+          return;
         }
+
+        // Play the current item in the queue
+        var item = mediaQueue[mediaQueuePos];
+        console.log('Video zone: playing item ' + (mediaQueuePos + 1) + '/' + mediaQueue.length + ' (' + item.type + ')');
+
+        if (item.type === 'youtube') {
+          showVideoElement('yt-player');
+          hideVideoElement('video-no-content');
+          hideReelsPlayer();
+
+          var video = videoPlaylist[item.index];
+          console.log('Playing YouTube: ' + video.title);
+          if (youtubeReady && ytPlayer) {
+            ytPlayer.loadVideoById(video.videoId);
+          } else {
+            console.warn('YouTube player not ready yet, waiting...');
+          }
+        } else if (item.type === 'reel') {
+          showReelsPlayer();
+          hideVideoElement('yt-player');
+          hideVideoElement('video-no-content');
+
+          var reel = reelsList[item.index];
+          console.log('Playing Reel: ' + reel.filename);
+          playSingleReel(reel);
+        }
+
+        // Advance queue position for next rotation visit
+        mediaQueuePos = (mediaQueuePos + 1) % mediaQueue.length;
       })
       .catch(function (err) {
         console.error('Failed to fetch video/reels data:', err);
@@ -175,31 +213,13 @@ function onYouTubeIframeAPIReady() {
   }
 
   /**
-   * Advance to next YouTube video in playlist.
+   * Called when the single YouTube video for this rotation ends.
+   * Signals video zone complete to advance to the next zone.
    */
   function playNextYouTube() {
     if (!videoZoneActive) return;
-
-    videoIndex++;
-    if (videoIndex < videoPlaylist.length) {
-      var nextVideo = videoPlaylist[videoIndex];
-      console.log('Playing next video: ' + nextVideo.title + ' (' + (videoIndex + 1) + '/' + videoPlaylist.length + ')');
-      if (ytPlayer && youtubeReady) {
-        ytPlayer.loadVideoById(nextVideo.videoId);
-      }
-    } else {
-      // Playlist exhausted — check if Reels are available
-      console.log('YouTube playlist complete');
-      var hasReels = reelsEnabled && reelsList.length > 0;
-      if (hasReels) {
-        console.log('YouTube complete, switching to Reels');
-        youtubeComplete = true;
-        showReelsPlayer();
-        startReelsPlayback();
-      } else {
-        signalVideoZoneComplete();
-      }
-    }
+    console.log('YouTube video ended, advancing zone');
+    signalVideoZoneComplete();
   }
 
   /**
@@ -257,25 +277,15 @@ function onYouTubeIframeAPIReady() {
 
     video.addEventListener('ended', function () {
       if (!videoZoneActive) return;
-
-      // Check if minimum display time has been reached
-      if (reelsMinReached) {
-        console.log('Reels min display reached, advancing zone');
-        signalVideoZoneComplete();
-      } else {
-        playNextReel();
-      }
+      console.log('Reel ended, advancing zone');
+      signalVideoZoneComplete();
     });
   }
 
   /**
-   * Play the next reel in the list (wraps around).
+   * Play a single reel and advance zone when it ends.
    */
-  function playNextReel() {
-    if (reelsList.length === 0) return;
-
-    currentReelIndex = (currentReelIndex + 1) % reelsList.length;
-    var reel = reelsList[currentReelIndex];
+  function playSingleReel(reel) {
     var video = document.getElementById('reels-player');
     if (!video) return;
 
@@ -284,42 +294,12 @@ function onYouTubeIframeAPIReady() {
     if (playPromise !== undefined) {
       playPromise.catch(function (err) {
         console.error('Reel play failed:', err.message);
-        // Try next reel after a short delay
-        if (reelsList.length > 1) {
-          setTimeout(playNextReel, 500);
-        }
+        // If play fails, advance zone after a short delay
+        setTimeout(function () {
+          if (videoZoneActive) signalVideoZoneComplete();
+        }, 2000);
       });
     }
-  }
-
-  /**
-   * Start playing reels from the beginning of the list.
-   */
-  function startReelsPlayback() {
-    if (reelsList.length === 0) return;
-
-    currentReelIndex = 0;
-    reelsStartTime = Date.now();
-    reelsMinReached = false;
-
-    var reel = reelsList[0];
-    var video = document.getElementById('reels-player');
-    if (!video) return;
-
-    video.src = '/api/reels/files/' + reel.filename;
-    var playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(function (err) {
-        console.error('Reel play failed:', err.message);
-      });
-    }
-
-    // Set timer for minimum display duration
-    var minMs = (reelsMinDisplaySeconds || 30) * 1000;
-    setTimeout(function () {
-      reelsMinReached = true;
-      console.log('Reels minimum display time reached (' + reelsMinDisplaySeconds + 's)');
-    }, minMs);
   }
 
   /**
