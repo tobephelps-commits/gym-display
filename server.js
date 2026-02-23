@@ -12,6 +12,7 @@ const reelsFetcher = require('./services/reels-fetcher');
 const wodScraper = require('./services/wod-scraper');
 const mindbodyClient = require('./services/mindbody');
 const sheetsClient = require('./services/sheets-client');
+const leaderboardService = require('./services/leaderboard-service');
 const { createWodProxy } = require('./services/wod-proxy');
 
 const config = configLoader.getConfig();
@@ -64,6 +65,9 @@ app.get('/api/config', (req, res) => {
     playlist: {
       source: videoManager.getSource(),
       count: videoManager.getVideoCount()
+    },
+    leaderboard: {
+      active: leaderboardService.isActive()
     },
     system: current.system || {}
   };
@@ -212,6 +216,11 @@ app.get('/api/sheets/data/:tab', (req, res) => {
 
   const data = sheetsClient.getTabData(tabName);
   res.json({ tab: tabName, data, count: data.length });
+});
+
+// Leaderboard API endpoint
+app.get('/api/leaderboard', (req, res) => {
+  res.json(leaderboardService.getLeaderboard());
 });
 
 // Log config reloads

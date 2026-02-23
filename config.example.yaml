@@ -12,7 +12,7 @@ wodscreen:
 
 # Display Zone Rotation
 zones:
-  rotation_order: ["wod", "video", "roster"]
+  rotation_order: ["wod", "video", "roster", "leaderboard"]
   wod:
     duration_seconds: 120
   video:
@@ -22,6 +22,12 @@ zones:
     duration_seconds: 60
     boost_before_class_minutes: 15
     boost_frequency: 2
+  # Leaderboard Zone: Reads from Sheets "Leaderboard" tab
+  # Tab columns: Name, Team, Points
+  # Teams: Green, Blue, Red (case-insensitive)
+  # Zone auto-skips when tab is empty or Sheets not configured
+  leaderboard:
+    duration_seconds: 90
 
 # Video Playlist
 # Primary source: Google Sheets "Playlist" tab (when Sheets is configured)
