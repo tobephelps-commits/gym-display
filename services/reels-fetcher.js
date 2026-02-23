@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { execFile } = require('child_process');
 const configLoader = require('./config-loader');
+const sheetsClient = require('./sheets-client');
 
 const CACHE_DIR = path.join(__dirname, '..', 'cache', 'reels');
 const PYTHON_CMD = process.platform === 'win32' ? 'py' : 'python3';
@@ -19,6 +21,10 @@ class ReelsFetcher {
     this._fetchTimer = null;
     this._fetching = false;
 
+    this._source = 'instaloader'; // 'sheets' or 'instaloader'
+    this._ytDlpAvailable = null; // null = unchecked, true/false after check
+    this._urlFileMap = new Map(); // URL -> filename mapping for stale detection
+
     // Load config
     this._loadConfig();
 
@@ -32,6 +38,9 @@ class ReelsFetcher {
 
     // Scan existing cached reels
     this._scanCachedReels();
+
+    // Check yt-dlp availability (async, best-effort)
+    this._checkYtDlpAvailability();
 
     // Run initial fetch (best-effort, async)
     if (this._enabled) {
@@ -101,20 +110,174 @@ class ReelsFetcher {
   }
 
   /**
-   * Run instaloader to fetch reels from the public profile.
-   * Downloads only VIDEO posts, skips images, limited to max_reels.
+   * Check if yt-dlp is installed and available.
+   */
+  _checkYtDlpAvailability() {
+    execFile('yt-dlp', ['--version'], { timeout: 5000 }, (err, stdout) => {
+      if (err) {
+        this._ytDlpAvailable = false;
+        console.log('[ReelsFetcher] yt-dlp not found');
+      } else {
+        this._ytDlpAvailable = true;
+        const version = (stdout || '').trim();
+        console.log(`[ReelsFetcher] yt-dlp available: ${version}`);
+      }
+    });
+  }
+
+  /**
+   * Check if a URL is a YouTube URL (handled by VideoManager, not ReelsFetcher).
+   */
+  _isYouTubeUrl(url) {
+    if (!url) return false;
+    return /(?:youtube\.com|youtu\.be)/i.test(url);
+  }
+
+  /**
+   * Check if a Sheets row is enabled.
+   */
+  _isEnabledRow(row) {
+    if (!row || !row.enabled) return false;
+    const val = String(row.enabled).trim().toLowerCase();
+    return ['true', 'yes', '1'].includes(val);
+  }
+
+  /**
+   * Get reel URLs from the Sheets "Playlist" tab.
+   * Returns null if Sheets not configured/available (signals: use instaloader fallback).
+   * Returns array of {url, title} if Sheets active (may be empty).
+   */
+  _getReelUrlsFromSheets() {
+    if (!sheetsClient.getStatus().configured) return null;
+
+    const rows = sheetsClient.getTabData('Playlist');
+    if (!rows || rows.length === 0) return null;
+
+    return rows
+      .filter(row => row.url && this._isEnabledRow(row) && !this._isYouTubeUrl(row.url))
+      .map(row => ({ url: row.url.trim(), title: row.title || row.url }));
+  }
+
+  /**
+   * Generate a stable filename from a URL using MD5 hash.
+   */
+  _generateFilename(url) {
+    return crypto.createHash('md5').update(url).digest('hex').slice(0, 12);
+  }
+
+  /**
+   * Download a video using yt-dlp.
+   * Returns true on success, false on failure.
+   */
+  _downloadWithYtDlp(url, outputFilename) {
+    return new Promise((resolve) => {
+      if (this._ytDlpAvailable === false) {
+        resolve(false);
+        return;
+      }
+
+      const outputTemplate = path.join(CACHE_DIR, `${outputFilename}.%(ext)s`);
+      const args = [
+        '-o', outputTemplate,
+        '--format', 'mp4',
+        '--no-playlist',
+        url
+      ];
+
+      execFile('yt-dlp', args, {
+        timeout: 120000,
+        maxBuffer: 1024 * 1024
+      }, (err, stdout, stderr) => {
+        if (err) {
+          if (err.code === 'ENOENT') {
+            // yt-dlp not found
+            if (this._ytDlpAvailable !== false) {
+              console.warn('[ReelsFetcher] yt-dlp not found \u2014 install with: pip3 install yt-dlp');
+              this._ytDlpAvailable = false;
+            }
+            resolve(false);
+            return;
+          }
+          console.error(`[ReelsFetcher] yt-dlp download failed for ${url}: ${err.message}`);
+          resolve(false);
+          return;
+        }
+        resolve(true);
+      });
+    });
+  }
+
+  /**
+   * Run Sheets-based download flow (replaces _runInstaloader when Sheets active).
+   */
+  async _runSheetsDownload() {
+    const urls = this._getReelUrlsFromSheets();
+    if (!urls || urls.length === 0) {
+      console.log('[ReelsFetcher] No reel URLs found in Sheets Playlist tab');
+      return;
+    }
+
+    // Build current URL -> filename map
+    const currentUrlFiles = new Map();
+    for (const item of urls) {
+      const filename = this._generateFilename(item.url);
+      currentUrlFiles.set(item.url, filename);
+
+      // Check if already cached
+      const mp4Path = path.join(CACHE_DIR, `${filename}.mp4`);
+      if (fs.existsSync(mp4Path)) {
+        continue; // Already downloaded
+      }
+
+      // Download new reel
+      console.log(`[ReelsFetcher] Downloading reel: ${item.title} (${item.url})`);
+      await this._downloadWithYtDlp(item.url, filename);
+    }
+
+    // Prune stale reels (files whose URLs are no longer in Sheets)
+    if (this._urlFileMap.size > 0) {
+      const currentFilenames = new Set(currentUrlFiles.values());
+      for (const [oldUrl, oldFilename] of this._urlFileMap) {
+        if (!currentFilenames.has(oldFilename)) {
+          const stalePath = path.join(CACHE_DIR, `${oldFilename}.mp4`);
+          try {
+            if (fs.existsSync(stalePath)) {
+              fs.unlinkSync(stalePath);
+              console.log(`[ReelsFetcher] Pruned stale reel: ${oldFilename}.mp4`);
+            }
+          } catch (e) { /* ignore */ }
+        }
+      }
+    }
+
+    // Update the URL -> filename mapping
+    this._urlFileMap = currentUrlFiles;
+  }
+
+  /**
+   * Run fetch cycle: tries Sheets first, falls back to instaloader.
    */
   async runFetchCycle() {
     if (!this._enabled || this._fetching) return;
     this._fetching = true;
 
     try {
-      console.log(`[ReelsFetcher] Fetching reels from @${this._username}...`);
+      const sheetsUrls = this._getReelUrlsFromSheets();
 
-      await this._runInstaloader();
+      if (sheetsUrls !== null) {
+        // Sheets is active — use yt-dlp download
+        this._source = 'sheets';
+        console.log(`[ReelsFetcher] Fetching reels from Sheets playlist (${sheetsUrls.length} URLs)...`);
+        await this._runSheetsDownload();
+      } else {
+        // No Sheets — fall back to instaloader
+        this._source = 'instaloader';
+        console.log(`[ReelsFetcher] Fetching reels from @${this._username} via instaloader...`);
+        await this._runInstaloader();
 
-      // Clean up non-mp4 files instaloader may create
-      this._cleanNonVideos();
+        // Clean up non-mp4 files instaloader may create
+        this._cleanNonVideos();
+      }
 
       // Scan what we have now
       this._scanCachedReels();
@@ -132,7 +295,7 @@ class ReelsFetcher {
       }
 
       this._lastFetch = new Date();
-      console.log(`[ReelsFetcher] Fetch complete: ${this._reelsList.length} reels cached`);
+      console.log(`[ReelsFetcher] Fetch complete (${this._source}): ${this._reelsList.length} reels cached`);
     } catch (err) {
       console.error(`[ReelsFetcher] Fetch cycle failed: ${err.message}`);
     } finally {
@@ -236,6 +399,13 @@ class ReelsFetcher {
   }
 
   /**
+   * Returns the current reel source ('sheets' or 'instaloader').
+   */
+  getSource() {
+    return this._source;
+  }
+
+  /**
    * Returns status object.
    */
   getStatus() {
@@ -243,7 +413,9 @@ class ReelsFetcher {
       enabled: this._enabled,
       username: this._username,
       reelsCount: this._reelsList.length,
-      lastFetch: this._lastFetch ? this._lastFetch.toISOString() : null
+      lastFetch: this._lastFetch ? this._lastFetch.toISOString() : null,
+      source: this._source,
+      ytDlpAvailable: this._ytDlpAvailable !== false
     };
   }
 
