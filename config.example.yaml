@@ -23,7 +23,12 @@ zones:
     boost_before_class_minutes: 15
     boost_frequency: 2
 
-# Video Playlist (YouTube URLs only)
+# Video Playlist
+# Primary source: Google Sheets "Playlist" tab (when Sheets is configured)
+# Fallback source: videos list below (when Sheets not configured)
+# Sheets tab format: columns "url", "title", "enabled" (TRUE/FALSE)
+# Both YouTube and Instagram reel URLs are supported in the Sheets tab
+# YouTube URLs play via iframe; Instagram URLs are downloaded as reels
 videos:
   - url: "https://www.youtube.com/watch?v=82jNjDS19lg"
     title: "Double Under Demo"

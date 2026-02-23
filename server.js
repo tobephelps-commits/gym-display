@@ -61,6 +61,10 @@ app.get('/api/config', (req, res) => {
     sheets: {
       configured: sheetsClient.getStatus().configured
     },
+    playlist: {
+      source: videoManager.getSource(),
+      count: videoManager.getVideoCount()
+    },
     system: current.system || {}
   };
 
@@ -88,7 +92,8 @@ app.post('/api/zones/advance', (req, res) => {
 app.get('/api/videos', (req, res) => {
   res.json({
     videos: videoManager.getPlaylist(),
-    count: videoManager.getVideoCount()
+    count: videoManager.getVideoCount(),
+    source: videoManager.getSource()
   });
 });
 
