@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BigBarn Admin</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <header class="admin-header">
+    <h1 class="admin-title">BigBarn Admin</h1>
+    <span id="uptime-badge" class="uptime-badge">--</span>
+  </header>
+
+  <nav class="admin-nav">
+    <button class="nav-tab active" data-page="dashboard">Dashboard</button>
+    <button class="nav-tab" data-page="settings">Settings</button>
+  </nav>
+
+  <main class="admin-content">
+    <div id="page-dashboard" class="page-section">
+      <!-- Dashboard content will be populated by Plan 02 -->
+      <p class="placeholder-text">Dashboard loading...</p>
+    </div>
+    <div id="page-settings" class="page-section hidden">
+      <!-- Settings content will be populated by Plan 03 -->
+      <p class="placeholder-text">Settings loading...</p>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="admin.js"></script>
+</body>
+</html>
