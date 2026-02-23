@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 
 Milestone: v1.1 Command Center
 Phase: 10 of 10 (Web Admin Panel) — IN PROGRESS
-Plan: 1 of N in current phase — COMPLETE
-Status: Plan 10-01 complete — admin backend infrastructure + HTML shell done; ready for Plan 10-02 (dashboard page)
-Last activity: 2026-02-23 — Completed 10-01-PLAN.md
+Plan: 3 of N in current phase — COMPLETE
+Status: Plan 10-03 complete — admin settings page with config editor, validation, backup/restore done
+Last activity: 2026-02-23 — Completed 10-03-PLAN.md
 
-Progress: █████████▒ 92%
+Progress: █████████▓ 96%
 
 ## Deployment Info
 
@@ -100,6 +100,9 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 - **Admin open access default** (Phase 10): No auth when admin_token not configured — appropriate for local Pi
 - **Admin token auth** (Phase 10): Bearer header or query param for browser convenience
 - **Admin credential masking** (Phase 10): Masks passwords and API keys in /api/admin/config/full
+- **Per-section save** (Phase 10): Each settings card saves independently to avoid accidental cross-section changes
+- **Config backup on save** (Phase 10): Automatic one-level backup (config.yaml.bak) provides simple rollback
+- **Config validation** (Phase 10): Rejects invalid zone names, non-positive durations, out-of-range ports before writing
 
 ### Pending Todos
 
@@ -120,5 +123,5 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 10-01-PLAN.md — Admin panel backend + HTML shell done, ready for Plan 10-02 (dashboard)
-Resume file: .planning/phases/10-web-admin-panel/10-01-SUMMARY.md
+Stopped at: Completed 10-03-PLAN.md — Admin settings page with config editing, validation, backup/restore done
+Resume file: .planning/phases/10-web-admin-panel/10-03-SUMMARY.md
