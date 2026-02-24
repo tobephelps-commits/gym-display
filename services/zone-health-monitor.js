@@ -49,6 +49,7 @@ class ZoneHealthMonitor {
     this._leaderboardService = services.leaderboardService;
     this._announcementsService = services.announcementsService;
     this._configLoader = services.configLoader;
+    this._alertManager = services.alertManager || null;
 
     // Per-zone health state
     this._zones = {
@@ -162,6 +163,24 @@ class ZoneHealthMonitor {
     // Log on state transitions only
     if (oldStatus !== zone.status) {
       console.log(`[HealthMonitor] zone=${zoneName} status=${zone.status} failures=${zone.consecutiveFailures}`);
+    }
+
+    // Notify alert manager of status transitions
+    if (this._alertManager && oldStatus !== zone.status) {
+      try {
+        this._alertManager.handleStatusChange(zoneName, oldStatus, zone.status, zone.lastError);
+      } catch (err) {
+        console.error(`[HealthMonitor] Alert dispatch error: ${err.message}`);
+      }
+    }
+
+    // Alert on escalation within same status (e.g., unhealthy zone crossing critical threshold)
+    if (this._alertManager && oldStatus === zone.status && zone.status !== STATUS.HEALTHY) {
+      try {
+        this._alertManager.handleStatusChange(zoneName, oldStatus, zone.status, zone.lastError);
+      } catch (err) {
+        console.error(`[HealthMonitor] Alert dispatch error: ${err.message}`);
+      }
     }
   }
 
@@ -359,6 +378,14 @@ class ZoneHealthMonitor {
     const zone = this._zones[zoneName];
     if (!zone) return null;
     return { ...zone };
+  }
+
+  /**
+   * Set the alert manager reference (late-binding to avoid circular dependency).
+   * @param {Object} alertManager - AlertManager instance
+   */
+  setAlertManager(alertManager) {
+    this._alertManager = alertManager;
   }
 }
 
