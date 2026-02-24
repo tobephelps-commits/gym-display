@@ -550,4 +550,48 @@ const server = app.listen(port, bindAddress, () => {
   }
 });
 
+// ── Graceful Shutdown ──
+// Clean up child processes (Puppeteer/Chromium), intervals, and connections
+// so systemctl restart doesn't hang waiting for SIGKILL.
+function shutdown(signal) {
+  console.log(`[Server] ${signal} received — shutting down...`);
+
+  // Stop health monitor polling
+  if (monitor) {
+    try { monitor.stopMonitoring(); } catch (e) { /* ignore */ }
+  }
+
+  // Stop alert manager timers
+  if (alerts) {
+    try { alerts.destroy(); } catch (e) { /* ignore */ }
+  }
+
+  // Stop service polling intervals
+  try { mindbodyClient.stopPolling(); } catch (e) { /* ignore */ }
+  try { sheetsClient.stopPolling(); } catch (e) { /* ignore */ }
+
+  // Stop config file watcher
+  try { configLoader.stopWatching(); } catch (e) { /* ignore */ }
+
+  // Close Puppeteer browser (biggest blocker for clean exit)
+  var browserClosed = wodScraper.shutdown().catch(function() {});
+
+  // Close HTTP server, then exit
+  server.close(function() {
+    browserClosed.then(function() {
+      console.log('[Server] Shutdown complete');
+      process.exit(0);
+    });
+  });
+
+  // Force exit after 5s if something hangs
+  setTimeout(function() {
+    console.error('[Server] Forced exit after timeout');
+    process.exit(1);
+  }, 5000);
+}
+
+process.on('SIGTERM', function() { shutdown('SIGTERM'); });
+process.on('SIGINT', function() { shutdown('SIGINT'); });
+
 module.exports = { app, server };
