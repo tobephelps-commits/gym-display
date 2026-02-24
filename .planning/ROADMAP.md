@@ -60,7 +60,7 @@ See [milestone archive](milestones/v1.1-ROADMAP.md) for full phase details.
 **Plans**: TBD
 
 Plans:
-- [ ] 11-01: TBD (run /gsd:plan-phase 11 to break down)
+- [x] 11-01: Production Credentials & Deployment (1/1 plans, MindBody deferred) — completed 2026-02-23
 
 ## Progress
 
@@ -79,4 +79,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 8. Team vs Team Leaderboard | v1.1 | 2/2 | Complete | 2026-02-23 |
 | 9. Announcements Zone | v1.1 | 2/2 | Complete | 2026-02-23 |
 | 10. Web Admin Panel | v1.1 | 3/3 | Complete | 2026-02-23 |
-| 11. Production Credentials & Deployment | v1.2 | 0/? | Not started | - |
+| 11. Production Credentials & Deployment | v1.2 | 1/1 | Complete (MindBody deferred) | 2026-02-23 |

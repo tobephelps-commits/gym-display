@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-23)
 
 Milestone: v1.2 Go Live
 Phase: 11 of 11 (Production Credentials & Deployment)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-02-23 — Milestone v1.2 created
+Plan: 01 — Complete (MindBody deferred)
+Status: Phase complete — MindBody API activation pending externally
+Last activity: 2026-02-23 — Phase 11 executed, MindBody deferred
 
-Progress: ░░░░░░░░░░ 0%
+Progress: ████████░░ 80% (4/5 zones production-ready, roster pending MindBody API access)
 
 ## Deployment Info
 
@@ -89,13 +89,14 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 
 ### Pending Todos
 
-- [ ] Install yt-dlp on Pi: `pip3 install yt-dlp`
-- [ ] Replace MindBody sandbox credentials with production API key
-- [ ] Set up Google Sheets service account and credentials file on Pi
+- [x] Install yt-dlp on Pi — already installed (v2026.02.21)
+- [x] Replace MindBody sandbox credentials with production API key — entered, but API key lacks site access
+- [x] Set up Google Sheets service account and credentials file on Pi — working
+- [ ] Activate MindBody API key for site ID 24936 in MindBody developer portal
 
 ### Blockers/Concerns Carried Forward
 
-(Cleared for new milestone — all prior concerns are addressed by v1.2 scope)
+- MindBody API returns 403 "You do not have access to siteId 24936" — needs activation in developer portal
 
 ### Roadmap Evolution
 
@@ -106,5 +107,5 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Milestone v1.2 initialization
+Stopped at: Phase 11 complete (MindBody deferred)
 Resume file: None
