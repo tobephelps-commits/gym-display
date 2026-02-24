@@ -330,14 +330,14 @@
         document.getElementById('playlist-sheets-msg').style.display = 'none';
         document.getElementById('playlist-config-section').style.display = 'block';
         playlistVideos = (cfg.videos || []).map(function (v) {
-          return { url: v.url, title: v.title, enabled: v.enabled !== false, days: v.days || '' };
+          return { url: v.url, title: v.title, enabled: v.enabled !== false, days: v.days || '', focus: v.focus || false };
         });
         renderPlaylist();
       }
     }).catch(function () {
       // Fallback: show config-based playlist
       playlistVideos = (cfg.videos || []).map(function (v) {
-        return { url: v.url, title: v.title, enabled: v.enabled !== false, days: v.days || '' };
+        return { url: v.url, title: v.title, enabled: v.enabled !== false, days: v.days || '', focus: v.focus || false };
       });
       renderPlaylist();
     });
@@ -379,6 +379,16 @@
       });
       tdDays.appendChild(daysInput);
 
+      var tdFocus = document.createElement('td');
+      var focusCb = document.createElement('input');
+      focusCb.type = 'checkbox';
+      focusCb.checked = vid.focus;
+      focusCb.style.cssText = 'width:16px;height:16px;accent-color:#e53e3e;';
+      focusCb.addEventListener('change', function () {
+        playlistVideos[idx].focus = focusCb.checked;
+      });
+      tdFocus.appendChild(focusCb);
+
       var tdRemove = document.createElement('td');
       var removeBtn = document.createElement('button');
       removeBtn.className = 'btn-remove';
@@ -396,6 +406,7 @@
       tr.appendChild(tdUrl);
       tr.appendChild(tdEnabled);
       tr.appendChild(tdDays);
+      tr.appendChild(tdFocus);
       tr.appendChild(tdRemove);
       tbody.appendChild(tr);
     });
@@ -435,7 +446,7 @@
         return;
       }
 
-      playlistVideos.push({ url: url, title: title || url, enabled: true, days: '' });
+      playlistVideos.push({ url: url, title: title || url, enabled: true, days: '', focus: false });
       renderPlaylist();
       addVideoForm.style.display = 'none';
       addVideoBtn.style.display = '';

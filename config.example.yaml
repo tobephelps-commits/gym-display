@@ -41,20 +41,24 @@ leaderboard:
 # Video Playlist
 # Primary source: Google Sheets "Playlist" tab (when Sheets is configured)
 # Fallback source: videos list below (when Sheets not configured)
-# Sheets tab format: columns "url", "title", "enabled" (TRUE/FALSE), "days" (optional)
+# Sheets tab format: columns "url", "title", "enabled" (TRUE/FALSE), "days" (optional), "focus" (optional)
 # Both YouTube and Instagram reel URLs are supported in the Sheets tab
 # YouTube URLs play via iframe; Instagram URLs are downloaded as reels
 # Day-of-week scheduling: "days" column accepts comma-separated day abbreviations
 #   e.g. "Mon,Wed,Fri" — leave blank to play every day
 #   Valid values: Mon, Tue, Wed, Thu, Fri, Sat, Sun (case-insensitive)
+# Focus mode: set "focus" to true to highlight a video — it plays every other rotation.
+#   Multiple focus videos alternate in the focus slot. Non-focus videos fill the remaining slots.
 videos:
   - url: "https://www.youtube.com/watch?v=82jNjDS19lg"
     title: "Double Under Demo"
     enabled: true
     days: "Mon,Wed,Fri"
+    focus: false
   - url: "https://www.youtube.com/watch?v=QABW99qPiNM&pp=ygURYmlyZGRvZ3MgZXhlcmNpc2U%3D"
     title: "Bird Dogs"
     enabled: true
+    focus: false
     # days: ""  # Blank or omitted = plays every day
 
 # MindBody Integration

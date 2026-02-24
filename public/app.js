@@ -138,12 +138,53 @@ function onYouTubeIframeAPIReady() {
   function refreshMediaQueue() {
     var newQueue = [];
 
+    // Separate focus videos from normal videos
+    var focusItems = [];
+    var normalItems = [];
+
     for (var i = 0; i < videoPlaylist.length; i++) {
-      newQueue.push({ type: 'youtube', index: i });
+      if (videoPlaylist[i].focus) {
+        focusItems.push({ type: 'youtube', index: i });
+      } else {
+        normalItems.push({ type: 'youtube', index: i });
+      }
     }
     if (reelsEnabled) {
       for (var j = 0; j < reelsList.length; j++) {
-        newQueue.push({ type: 'reel', index: j });
+        normalItems.push({ type: 'reel', index: j });
+      }
+    }
+
+    if (focusItems.length === 0) {
+      // No focus videos — build queue as before (all YouTube then all reels)
+      for (var k = 0; k < videoPlaylist.length; k++) {
+        newQueue.push({ type: 'youtube', index: k });
+      }
+      if (reelsEnabled) {
+        for (var l = 0; l < reelsList.length; l++) {
+          newQueue.push({ type: 'reel', index: l });
+        }
+      }
+    } else {
+      // Interleave: focus[0], normal[0], focus[1], normal[1], ...
+      var queueLen = 2 * Math.max(focusItems.length, normalItems.length);
+      if (normalItems.length === 0) queueLen = focusItems.length;
+      var fi = 0;
+      var ni = 0;
+      for (var m = 0; m < queueLen; m++) {
+        if (normalItems.length === 0) {
+          // Only focus videos exist
+          newQueue.push(focusItems[fi % focusItems.length]);
+          fi++;
+        } else if (m % 2 === 0) {
+          // Focus slot
+          newQueue.push(focusItems[fi % focusItems.length]);
+          fi++;
+        } else {
+          // Normal slot
+          newQueue.push(normalItems[ni % normalItems.length]);
+          ni++;
+        }
       }
     }
 

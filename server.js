@@ -438,6 +438,7 @@ app.post('/api/admin/refresh/:service', adminAuthMiddleware, async (req, res) =>
         return res.json({ success: true, service, message: 'WOD refresh triggered' });
       case 'sheets':
         await sheetsClient.poll();
+        sheetsClient.writeInstructionsTab().catch(err => console.warn(`[Sheets] Instructions tab error: ${err.message}`));
         zoneController.bumpRefreshVersion();
         return res.json({ success: true, service, message: 'Sheets poll triggered' });
       case 'videos':

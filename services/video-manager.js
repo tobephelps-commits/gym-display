@@ -112,10 +112,15 @@ class VideoManager {
       // Day-of-week filter
       if (!isScheduledForToday(row.days)) continue;
 
+      // Focus flag — same parsing as enabled
+      const focusVal = String(row.focus || '').trim().toLowerCase();
+      const focus = ['true', 'yes', '1'].includes(focusVal);
+
       playlist.push({
         videoId,
         title: row.title || 'Untitled',
-        url: row.url
+        url: row.url,
+        focus
       });
     }
 
@@ -151,7 +156,8 @@ class VideoManager {
         this._playlist.push({
           videoId,
           title: entry.title || 'Untitled',
-          url: entry.url
+          url: entry.url,
+          focus: !!entry.focus
         });
       }
       this._source = 'config';
@@ -200,7 +206,7 @@ class VideoManager {
    * Returns array of { videoId, title } for enabled videos with valid YouTube IDs.
    */
   getPlaylist() {
-    return this._playlist.map(v => ({ videoId: v.videoId, title: v.title }));
+    return this._playlist.map(v => ({ videoId: v.videoId, title: v.title, focus: v.focus || false }));
   }
 
   /**
