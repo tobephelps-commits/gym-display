@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Milestone: v1.3 Resilience
-Phase: 13 of 15 (Graceful Degradation)
-Plan: 1 of 1 in current phase
-Status: Phase 13 complete — health-aware rotation skips unhealthy zones
-Last activity: 2026-02-24 - Completed 13-01-PLAN.md
+Phase: 14 of 15 (Tiered Alert System)
+Plan: 1 of 2 in current phase
+Status: In progress — core alert services created, integration pending
+Last activity: 2026-02-24 - Completed 14-01-PLAN.md
 
-Progress: ###░░░░░░░ 50%
+Progress: ######░░░░ 62%
 
 ## Deployment Info
 
@@ -107,5 +107,5 @@ None (MindBody 403 is a known deferred issue — v1.3 health monitor will handle
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Phase 13 complete, ready for Phase 14
-Resume file: .planning/phases/13-graceful-degradation/13-01-SUMMARY.md
+Stopped at: Completed 14-01-PLAN.md, ready for 14-02
+Resume file: .planning/phases/14-tiered-alert-system/14-01-SUMMARY.md
