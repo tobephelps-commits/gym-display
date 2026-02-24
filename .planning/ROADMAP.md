@@ -99,10 +99,10 @@ Plans:
 **Goal**: Error history log, current zone health status with uptime, alert delivery log — all visible on the existing web admin panel
 **Depends on**: Phase 14
 **Research**: Unlikely (internal patterns — extending existing Express.js admin panel)
-**Plans**: TBD
+**Plans**: 1
 
 Plans:
-- [ ] 15-01: TBD
+- [x] 15-01: Health tab (zone health cards, error history, alert status) — completed 2026-02-24
 
 ## Progress
 
@@ -125,4 +125,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 12. Zone Health Monitor | v1.3 | 1/1 | Complete | 2026-02-24 |
 | 13. Graceful Degradation | v1.3 | 1/1 | Complete | 2026-02-24 |
 | 14. Tiered Alert System | v1.3 | 2/2 | Complete | 2026-02-24 |
-| 15. Admin Error Dashboard | v1.3 | 0/? | Not started | - |
+| 15. Admin Error Dashboard | v1.3 | 1/1 | Complete | 2026-02-24 |
