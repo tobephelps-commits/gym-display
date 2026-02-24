@@ -115,6 +115,8 @@ class AlertManager {
       this._sendCritical(zoneName, newStatus, errorMsg, fingerprint);
     } else if (severity === SEVERITY.WARNING) {
       this._queueWarning(zoneName, newStatus, errorMsg, fingerprint);
+    } else if (severity === SEVERITY.INFO) {
+      this._recordHistory(zoneName, SEVERITY.INFO, errorMsg || newStatus, false);
     }
   }
 
@@ -267,6 +269,11 @@ class AlertManager {
     // Zone DEGRADED for 3+ checks → WARNING
     if (newStatus === 'degraded' && consecutiveFailures >= this._config.min_failures_critical) {
       return SEVERITY.WARNING;
+    }
+
+    // Zone DEGRADED with few checks → INFO (no notification)
+    if (newStatus === 'degraded') {
+      return SEVERITY.INFO;
     }
 
     return SEVERITY.WARNING;
