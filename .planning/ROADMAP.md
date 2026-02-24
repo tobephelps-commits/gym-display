@@ -17,7 +17,7 @@ None
 
 ## Current Milestone: v1.4 Video Scheduling
 
-### Phase 16: Day-of-Week Video Scheduling -- Complete
+### Phase 16: Day-of-Week Video Scheduling — completed 2026-02-24
 
 **Goal:** Allow videos in the playlist to be assigned specific days of the week they should play, configured via a new column in the Google Sheets Playlist tab.
 **Depends on:** Phase 15
