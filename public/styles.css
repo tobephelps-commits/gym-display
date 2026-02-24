@@ -365,6 +365,16 @@ body {
   flex-direction: column;
 }
 
+.leaderboard-members-twocol {
+  display: block;
+  column-count: 2;
+  column-gap: 16px;
+}
+
+.leaderboard-members-twocol .leaderboard-member-row {
+  break-inside: avoid;
+}
+
 .leaderboard-member-row {
   display: flex;
   justify-content: space-between;

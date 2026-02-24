@@ -550,6 +550,16 @@ function onYouTubeIframeAPIReady() {
       card.appendChild(membersEl);
       container.appendChild(card);
     });
+
+    // After rendering, check each members list for overflow and switch to two columns
+    requestAnimationFrame(function() {
+      var memberLists = container.querySelectorAll('.leaderboard-members');
+      memberLists.forEach(function(el) {
+        if (el.scrollHeight > el.clientHeight) {
+          el.classList.add('leaderboard-members-twocol');
+        }
+      });
+    });
   }
 
   /**
