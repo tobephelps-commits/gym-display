@@ -77,7 +77,7 @@ Plans:
 **Goal**: Unhealthy zones get automatically skipped in rotation, re-added when they recover — rotation never stalls or shows broken content
 **Depends on**: Phase 12
 **Research**: Unlikely (internal patterns — modifying existing rotation logic)
-**Plans**: TBD
+**Plans**: 1
 
 Plans:
 - [x] 13-01: Health-aware zone rotation with skip logic — completed 2026-02-24
