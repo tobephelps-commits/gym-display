@@ -699,5 +699,222 @@
     };
   })();
   </script>
+  <script>
+  /* ── Health Module ── */
+  (function () {
+    'use strict';
+
+    var api = window.AdminApp.api;
+    var formatTimestamp = window.AdminApp.formatTimestamp;
+
+    var pollTimer = null;
+    var ZONES = ['wod', 'video', 'roster', 'leaderboard', 'announcements'];
+
+    var statusColors = {
+      healthy: '#48bb78',
+      degraded: '#ecc94b',
+      unhealthy: '#fc8181'
+    };
+
+    var statusDotClass = {
+      healthy: 'ok',
+      degraded: 'warning',
+      unhealthy: 'error'
+    };
+
+    // ── Load Health Data ──
+    function loadHealth() {
+      var statusPromise = api('status');
+      var alertsPromise = api('alerts');
+
+      Promise.all([statusPromise, alertsPromise])
+        .then(function (results) {
+          var statusData = results[0];
+          var alertsData = results[1];
+
+          if (statusData.health) {
+            renderZoneHealthCards(statusData.health);
+          }
+          renderErrorHistory(alertsData.history || []);
+          renderAlertStatus(alertsData.alerts, alertsData.notifications);
+        })
+        .catch(function (err) {
+          console.error('[Health] Failed to load health data:', err.message);
+        });
+    }
+
+    // ── Render Zone Health Cards ──
+    function renderZoneHealthCards(healthData) {
+      // Overall status
+      var overallDot = document.getElementById('health-overall-dot');
+      var overallText = document.getElementById('health-overall-text');
+      var overall = healthData.overall || 'unknown';
+      if (overallDot) overallDot.className = 'status-dot ' + (statusDotClass[overall] || '');
+      if (overallText) {
+        overallText.textContent = overall;
+        overallText.style.color = statusColors[overall] || '#eee';
+      }
+
+      var zones = healthData.zones || {};
+      ZONES.forEach(function (zone) {
+        var data = zones[zone] || {};
+        var status = data.status || 'unknown';
+
+        // Card border color
+        var card = document.getElementById('health-card-' + zone);
+        if (card) {
+          card.className = 'card health-card status-' + status;
+        }
+
+        // Status dot
+        var dot = document.getElementById('health-dot-' + zone);
+        if (dot) dot.className = 'status-dot ' + (statusDotClass[status] || '');
+
+        // Status text
+        var statusEl = document.getElementById('health-status-' + zone);
+        if (statusEl) {
+          statusEl.textContent = status;
+          statusEl.style.color = statusColors[status] || '#eee';
+        }
+
+        // Last success
+        var successEl = document.getElementById('health-success-' + zone);
+        if (successEl) successEl.textContent = formatTimestamp(data.lastSuccess);
+
+        // Consecutive failures
+        var failEl = document.getElementById('health-failures-' + zone);
+        if (failEl) {
+          var failures = data.consecutiveFailures || 0;
+          failEl.textContent = failures;
+          failEl.style.color = failures > 0 ? '#fc8181' : '#ccc';
+        }
+
+        // Last error
+        var errorEl = document.getElementById('health-error-' + zone);
+        if (errorEl) {
+          var errMsg = data.lastError || '';
+          errorEl.textContent = errMsg;
+          errorEl.title = errMsg;
+        }
+      });
+    }
+
+    // ── Render Error History ──
+    function renderErrorHistory(history) {
+      var tbody = document.getElementById('error-history-tbody');
+      var emptyMsg = document.getElementById('error-history-empty');
+      if (!tbody) return;
+
+      if (!history || history.length === 0) {
+        tbody.innerHTML = '';
+        if (emptyMsg) emptyMsg.style.display = 'block';
+        return;
+      }
+
+      if (emptyMsg) emptyMsg.style.display = 'none';
+
+      // Reverse for most recent first
+      var sorted = history.slice().reverse();
+      var html = '';
+
+      sorted.forEach(function (entry) {
+        var severity = (entry.severity || 'INFO').toUpperCase();
+        var badgeClass = severity.toLowerCase();
+        var msg = entry.message || '';
+        var truncated = msg.length > 80 ? msg.substring(0, 80) + '...' : msg;
+        var notified = entry.notified ? '&#10003;' : '&mdash;';
+
+        html += '<tr>';
+        html += '<td style="white-space:nowrap;">' + formatTimestamp(entry.timestamp) + '</td>';
+        html += '<td style="text-transform:capitalize;">' + (entry.zone || '--') + '</td>';
+        html += '<td><span class="severity-badge ' + badgeClass + '">' + severity + '</span></td>';
+        html += '<td class="msg-cell" title="' + escapeHtml(msg) + '">' + escapeHtml(truncated) + '</td>';
+        html += '<td style="text-align:center;">' + notified + '</td>';
+        html += '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    // ── Render Alert Status ──
+    function renderAlertStatus(alertsData, notificationsData) {
+      var activeEl = document.getElementById('alert-active-count');
+      var cooldownEl = document.getElementById('alert-cooldown-count');
+      var flappingEl = document.getElementById('alert-flapping');
+      var pushoverEl = document.getElementById('alert-pushover-status');
+      var emailEl = document.getElementById('alert-email-status');
+
+      if (alertsData) {
+        if (activeEl) activeEl.textContent = alertsData.activeAlerts || 0;
+        if (cooldownEl) cooldownEl.textContent = alertsData.cooldowns || 0;
+        if (flappingEl) {
+          var flapping = alertsData.flapping || [];
+          flappingEl.textContent = flapping.length > 0 ? flapping.join(', ') : 'None';
+          flappingEl.style.color = flapping.length > 0 ? '#ecc94b' : '#ccc';
+        }
+      }
+
+      if (notificationsData) {
+        if (pushoverEl) {
+          var po = notificationsData.pushover || {};
+          pushoverEl.textContent = po.configured ? (po.enabled !== false ? 'Enabled' : 'Disabled') : 'Not configured';
+          pushoverEl.style.color = po.configured ? '#48bb78' : '#888';
+        }
+        if (emailEl) {
+          var em = notificationsData.email || {};
+          emailEl.textContent = em.configured ? (em.enabled !== false ? 'Enabled' : 'Disabled') : 'Not configured';
+          emailEl.style.color = em.configured ? '#48bb78' : '#888';
+        }
+      }
+    }
+
+    // ── Helpers ──
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+
+    // ── Polling ──
+    function startHealthPolling() {
+      stopHealthPolling();
+      loadHealth();
+      pollTimer = setInterval(loadHealth, 15000);
+    }
+
+    function stopHealthPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    // ── Hook into tab switching ──
+    var navTabs = document.querySelectorAll('.nav-tab');
+    navTabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var page = tab.getAttribute('data-page');
+        if (page === 'health') {
+          startHealthPolling();
+        } else {
+          stopHealthPolling();
+        }
+      });
+    });
+
+    // Initial load if health is the active tab
+    var initialPage = window.location.hash.replace('#', '') || 'dashboard';
+    if (initialPage === 'health') {
+      startHealthPolling();
+    }
+
+    // ── Expose to global scope ──
+    window.HealthModule = {
+      loadHealth: loadHealth,
+      startPolling: startHealthPolling,
+      stopPolling: stopHealthPolling
+    };
+  })();
+  </script>
 </body>
 </html>
