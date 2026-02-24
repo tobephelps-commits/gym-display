@@ -1,5 +1,33 @@
 # Project Milestones: Gym Display System
 
+## v1.2 Go Live (Shipped: 2026-02-24)
+
+**Delivered:** Production deployment with verified video/reels, leaderboard, announcements, and WOD zones on the gym TV, plus reliability improvements (kiosk auto-restart, nightly reboot, CEC retries).
+
+**Phases completed:** 11 (1 plan total)
+
+**Key accomplishments:**
+
+- yt-dlp confirmed working on Pi for Instagram reel downloads from Sheets playlist
+- MindBody production credentials configured (pending external API key activation)
+- Two-column leaderboard layout for teams with many members
+- Kiosk auto-restart loop prevents blank screen on Chromium crash
+- Nightly Pi reboot at 3:30 AM clears stale state
+- CEC TV on/off commands retry up to 3 times on failure
+
+**Stats:**
+
+- 9 files modified (+142 lines)
+- 6,498 lines of code total (JS: 4,644 / HTML: 676 / CSS: 1,178)
+- 1 phase, 1 plan, 4 tasks
+- 2 days (Feb 23-24, 2026)
+
+**Git range:** `96e990a` → `509f54b`
+
+**What's next:** Activate MindBody API key for roster zone, then project is fully production-complete.
+
+---
+
 ## v1.1 Command Center (Shipped: 2026-02-23)
 
 **Delivered:** Google Sheets as central data hub powering two new rotation zones (team leaderboard and announcements), Sheets-driven playlist sync, Instagram reels fix via yt-dlp, and a web admin panel with live dashboard and settings editor.

@@ -6,7 +6,7 @@ A Raspberry Pi 5-based gym display system for a CrossFit box. It drives a wall-m
 
 ## Core Value
 
-The three-zone rotation (WOD, video, roster) must cycle reliably and continuously without crashes, stalls, or manual intervention — this is a set-it-and-forget-it gym display.
+The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cycle reliably and continuously without crashes, stalls, or manual intervention — this is a set-it-and-forget-it gym display.
 
 ## Requirements
 
@@ -37,7 +37,7 @@ The three-zone rotation (WOD, video, roster) must cycle reliably and continuousl
 
 ### Active
 
-(None — v1.1 shipped, next milestone not yet planned)
+- [ ] MindBody API key activation for site 24936 (external dependency — roster zone blocked)
 
 ### Out of Scope
 
@@ -48,17 +48,16 @@ The three-zone rotation (WOD, video, roster) must cycle reliably and continuousl
 
 ## Context
 
-Shipped v1.1 with 6,398 LOC (JS: 4,559 / HTML: 671 / CSS: 1,168) across 41+ files modified since v1.0.
-Tech stack: Node.js + Express backend, vanilla HTML/CSS/JS frontend, Puppeteer for WodScreen, YouTube IFrame API, yt-dlp for Instagram Reels (replacing instaloader), Google Sheets API v4 for data hub, MindBody Public API v6 for roster.
+Shipped v1.2 with ~6,498 LOC (JS: 4,644 / HTML: 676 / CSS: 1,178).
+Tech stack: Node.js + Express backend, vanilla HTML/CSS/JS frontend, Puppeteer for WodScreen, YouTube IFrame API, yt-dlp for Instagram Reels, Google Sheets API v4 for data hub, MindBody Public API v6 for roster.
 Five rotation zones: WOD, video, roster, leaderboard, announcements.
 Web admin panel at /admin for configuration and monitoring.
 Deployed on Raspberry Pi 5 running Raspberry Pi OS (Bookworm) with Wayland/labwc compositor.
 Remote access via Tailscale SSH. Deploy workflow: git push from Windows, git pull on Pi via SSH.
+Nightly reboot at 3:30 AM, CEC TV off at 9 PM / on at 4:30 AM. Kiosk auto-restarts on Chromium crash.
 
 Known issues:
-- yt-dlp needs to be installed on Pi (`pip3 install yt-dlp`) before Sheets-based reel downloading works
-- Google Sheets service account setup still pending (needed for Sheets-based features)
-- MindBody using sandbox credentials (needs production API key for real roster data)
+- MindBody API key not activated for site 24936 — roster zone non-functional until activated in MindBody developer portal
 
 ## Constraints
 
@@ -92,6 +91,9 @@ Known issues:
 | Admin open access by default | No auth when admin_token not configured; appropriate for local-only Pi | Good |
 | Per-section admin saves | Each settings card saves independently; avoids accidental cross-section changes | Good |
 | Config backup on save | Automatic one-level backup (config.yaml.bak); simple rollback without complexity | Good |
+| Defer MindBody roster | API key lacks site 24936 access; external dependency, not a code issue | Pending |
+| Nightly Pi reboot | Chromium network service crashed overnight causing blank screen; 3:30 AM reboot prevents stale state | Good |
+| Kiosk restart loop | Replace single `exec` with while loop; auto-recovers from Chromium crashes | Good |
 
 ---
-*Last updated: 2026-02-23 after v1.1 milestone*
+*Last updated: 2026-02-24 after v1.2 milestone*

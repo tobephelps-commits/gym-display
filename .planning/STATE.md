@@ -2,20 +2,20 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-23)
+See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** v1.2 Go Live — production credentials & deployment
+**Current focus:** All milestones shipped — monitoring production
 
 ## Current Position
 
-Milestone: v1.2 Go Live
-Phase: 11 of 11 (Production Credentials & Deployment)
-Plan: 01 — Complete (MindBody deferred)
-Status: Phase complete — MindBody API activation pending externally
-Last activity: 2026-02-23 — Phase 11 executed, MindBody deferred
+Milestone: v1.2 Go Live — SHIPPED
+Phase: 11 of 11 (complete)
+Plan: All complete
+Status: Production deployed
+Last activity: 2026-02-24 — v1.2 milestone archived
 
-Progress: ████████░░ 80% (4/5 zones production-ready, roster pending MindBody API access)
+Progress: ██████████ 100% (all milestones shipped)
 
 ## Deployment Info
 
@@ -53,18 +53,20 @@ git push origin master
 ssh BigBarn@100.120.21.22
 cd ~/gym-display && git pull origin master
 sudo systemctl restart gym-display
-# Kiosk auto-restarts via labwc autostart, or:
-pkill -9 chromium  # labwc autostart will relaunch it
+# Kiosk auto-restarts via restart loop, or:
+pkill -9 chromium  # restart loop will relaunch it
 ```
 
 ### Service Architecture on Pi
 
 - **gym-display.service** — Node.js server (systemd, auto-restart)
-- **labwc autostart** — Launches Chromium kiosk (`~/.config/labwc/autostart`)
+- **labwc autostart** — Launches Chromium kiosk with restart loop (`~/.config/labwc/autostart`)
 - **LightDM** — Desktop autologin → labwc Wayland session
 - **rpi-connect** — User service (screen sharing + remote shell)
 - **tailscaled** — System service (SSH access from dev machine)
-- **gym-cec-off.timer / gym-cec-on.timer** — TV power control (21:00 off, 04:30 on)
+- **gym-cec-off.timer** — TV standby at 21:00 (with retry logic)
+- **gym-cec-on.timer** — TV power on at 04:30 (with retry logic)
+- **gym-nightly-reboot.timer** — Pi reboot at 03:30 daily
 
 ### Kiosk Launch (manual, from SSH)
 
@@ -79,7 +81,7 @@ WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/1000 nohup /home/BigBarn/gym
 - **Account:** @bigbarncrossfit (public, no login required for instaloader fallback)
 - **Cache:** ~/gym-display/cache/reels/*.mp4 (10 reels cached)
 - **Filename:** MD5 hash of URL (stable, prevents re-downloads)
-- **yt-dlp install:** `pip3 install yt-dlp` on Pi (graceful degradation if missing)
+- **yt-dlp:** Installed on Pi (v2026.02.21)
 
 ## Accumulated Context
 
@@ -89,23 +91,20 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 
 ### Pending Todos
 
-- [x] Install yt-dlp on Pi — already installed (v2026.02.21)
-- [x] Replace MindBody sandbox credentials with production API key — entered, but API key lacks site access
-- [x] Set up Google Sheets service account and credentials file on Pi — working
 - [ ] Activate MindBody API key for site ID 24936 in MindBody developer portal
 
 ### Blockers/Concerns Carried Forward
 
-- MindBody API returns 403 "You do not have access to siteId 24936" — needs activation in developer portal
+- MindBody API returns 403 "You do not have access to siteId 24936" — needs activation in developer portal (roster zone non-functional until resolved)
 
 ### Roadmap Evolution
 
 - v1.0 MVP shipped: Three-zone rotation system, 5 phases (Phase 1-5)
 - v1.1 Command Center shipped: Google Sheets hub + new zones + admin panel, 5 phases (Phase 6-10)
-- Milestone v1.2 created: Production deployment & credentials, 1 phase (Phase 11)
+- v1.2 Go Live shipped: Production deployment, reliability improvements, 1 phase (Phase 11)
 
 ## Session Continuity
 
-Last session: 2026-02-23
-Stopped at: Phase 11 complete (MindBody deferred)
+Last session: 2026-02-24
+Stopped at: v1.2 milestone complete, all milestones shipped
 Resume file: None
