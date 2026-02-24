@@ -67,10 +67,10 @@ See [milestone archive](milestones/v1.2-ROADMAP.md) for full phase details.
 **Goal**: Track health of each zone (WOD, video, leaderboard, announcements, roster), detect failures (stalls, API errors, load failures, playback errors), implement retry logic before marking a zone unhealthy
 **Depends on**: Previous milestone complete
 **Research**: Unlikely (internal patterns — monitoring existing zone code)
-**Plans**: TBD
+**Plans**: 1
 
 Plans:
-- [ ] 12-01: TBD (run /gsd:plan-phase 12 to break down)
+- [x] 12-01: Zone Health Monitor service + server integration — completed 2026-02-24
 
 #### Phase 13: Graceful Degradation
 
@@ -121,7 +121,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 9. Announcements Zone | v1.1 | 2/2 | Complete | 2026-02-23 |
 | 10. Web Admin Panel | v1.1 | 3/3 | Complete | 2026-02-23 |
 | 11. Production Credentials & Deployment | v1.2 | 1/1 | Complete (MindBody deferred) | 2026-02-24 |
-| 12. Zone Health Monitor | v1.3 | 0/? | Not started | - |
+| 12. Zone Health Monitor | v1.3 | 1/1 | Complete | 2026-02-24 |
 | 13. Graceful Degradation | v1.3 | 0/? | Not started | - |
 | 14. Tiered Alert System | v1.3 | 0/? | Not started | - |
 | 15. Admin Error Dashboard | v1.3 | 0/? | Not started | - |
