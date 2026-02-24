@@ -88,7 +88,7 @@ Plans:
 **Depends on**: Phase 13
 **Research**: Likely (external services — email/SMS APIs, evaluate free/low-cost options)
 **Research topics**: Free/low-cost email services (nodemailer with Gmail, SendGrid free tier), SMS options (Twilio free tier, Pushover as alternative), Node.js integration patterns
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
 - [x] 14-01: Core alert services (NotificationService + AlertManager) — completed 2026-02-24
