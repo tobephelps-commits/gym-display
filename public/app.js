@@ -14,6 +14,7 @@ function onYouTubeIframeAPIReady() {
   let rotationTimer = null;
   let videoPlayFull = false;
   let lastBoostActive = false;
+  let zoneHealth = {}; // { wod: 'healthy', video: 'degraded', ... } — updated from /api/config poll
 
   // WOD state
   var wodMode = 'loading'; // 'loading' | 'iframe' | 'error'
@@ -770,9 +771,30 @@ function onYouTubeIframeAPIReady() {
    * Also syncs server-side zone controller to stay in lock-step.
    */
   function advanceZone() {
-    const fromZone = rotationOrder[currentIndex];
-    currentIndex = (currentIndex + 1) % rotationOrder.length;
-    const toZone = rotationOrder[currentIndex];
+    var fromZone = rotationOrder[currentIndex];
+    var skipped = 0;
+    var nextIndex = (currentIndex + 1) % rotationOrder.length;
+
+    // Skip unhealthy zones (cycle guard: never skip more than full rotation)
+    while (skipped < rotationOrder.length) {
+      var candidate = rotationOrder[nextIndex];
+      if (zoneHealth[candidate] === 'unhealthy') {
+        console.log('Skipping unhealthy zone: ' + candidate);
+        skipped++;
+        nextIndex = (nextIndex + 1) % rotationOrder.length;
+      } else {
+        break;
+      }
+    }
+
+    if (skipped > 0 && skipped < rotationOrder.length) {
+      console.log('Skipped ' + skipped + ' unhealthy zone(s)');
+    } else if (skipped >= rotationOrder.length) {
+      console.log('All zones unhealthy \u2014 showing next zone anyway');
+    }
+
+    currentIndex = nextIndex;
+    var toZone = rotationOrder[currentIndex];
 
     console.log('Zone transition: ' + fromZone + ' \u2192 ' + toZone);
     showZone(toZone);
@@ -883,6 +905,10 @@ function onYouTubeIframeAPIReady() {
         durations.announcements = ((zones.announcements && zones.announcements.duration_seconds) || 60) * 1000;
         var ann = config.announcements || {};
         announcementsConfigured = !!ann.active;
+
+        // Update zone health status
+        var health = config.health || {};
+        zoneHealth = (health && health.zones) || {};
 
         // Log boost state changes
         var boostActive = !!zones.boostActive;
