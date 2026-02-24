@@ -15,6 +15,7 @@
   <nav class="admin-nav">
     <button class="nav-tab active" data-page="dashboard">Dashboard</button>
     <button class="nav-tab" data-page="settings">Settings</button>
+    <button class="nav-tab" data-page="health">Health</button>
   </nav>
 
   <main class="admin-content">
@@ -309,6 +310,124 @@
         <h2 class="card-title">Config Backup</h2>
         <p class="settings-hint">A backup is created automatically each time settings are saved. Use restore to revert to the previous config.</p>
         <button class="btn btn-danger" id="restore-backup-btn">Restore Previous Config</button>
+      </div>
+
+    </div>
+    <div id="page-health" class="page-section hidden">
+
+      <!-- Overall Health Status -->
+      <div class="card health-overall-card">
+        <div class="card-title">System Health</div>
+        <div class="health-overall-row">
+          <span id="health-overall-dot" class="status-dot"></span>
+          <span id="health-overall-text" class="health-overall-text">--</span>
+        </div>
+      </div>
+
+      <!-- Zone Health Overview -->
+      <div class="health-grid">
+        <!-- WOD -->
+        <div class="card health-card" id="health-card-wod">
+          <div class="card-title"><span id="health-dot-wod" class="status-dot"></span>WOD</div>
+          <div class="health-status-text" id="health-status-wod">--</div>
+          <div class="health-detail">
+            <div>Last success: <span id="health-success-wod">never</span></div>
+            <div>Failures: <span id="health-failures-wod">0</span></div>
+            <div class="health-error-msg" id="health-error-wod"></div>
+          </div>
+        </div>
+
+        <!-- Video -->
+        <div class="card health-card" id="health-card-video">
+          <div class="card-title"><span id="health-dot-video" class="status-dot"></span>Video</div>
+          <div class="health-status-text" id="health-status-video">--</div>
+          <div class="health-detail">
+            <div>Last success: <span id="health-success-video">never</span></div>
+            <div>Failures: <span id="health-failures-video">0</span></div>
+            <div class="health-error-msg" id="health-error-video"></div>
+          </div>
+        </div>
+
+        <!-- Roster -->
+        <div class="card health-card" id="health-card-roster">
+          <div class="card-title"><span id="health-dot-roster" class="status-dot"></span>Roster</div>
+          <div class="health-status-text" id="health-status-roster">--</div>
+          <div class="health-detail">
+            <div>Last success: <span id="health-success-roster">never</span></div>
+            <div>Failures: <span id="health-failures-roster">0</span></div>
+            <div class="health-error-msg" id="health-error-roster"></div>
+          </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="card health-card" id="health-card-leaderboard">
+          <div class="card-title"><span id="health-dot-leaderboard" class="status-dot"></span>Leaderboard</div>
+          <div class="health-status-text" id="health-status-leaderboard">--</div>
+          <div class="health-detail">
+            <div>Last success: <span id="health-success-leaderboard">never</span></div>
+            <div>Failures: <span id="health-failures-leaderboard">0</span></div>
+            <div class="health-error-msg" id="health-error-leaderboard"></div>
+          </div>
+        </div>
+
+        <!-- Announcements -->
+        <div class="card health-card" id="health-card-announcements">
+          <div class="card-title"><span id="health-dot-announcements" class="status-dot"></span>Announcements</div>
+          <div class="health-status-text" id="health-status-announcements">--</div>
+          <div class="health-detail">
+            <div>Last success: <span id="health-success-announcements">never</span></div>
+            <div>Failures: <span id="health-failures-announcements">0</span></div>
+            <div class="health-error-msg" id="health-error-announcements"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error History Log -->
+      <div class="card">
+        <div class="card-title">Error History</div>
+        <div class="error-history-container">
+          <table class="error-history-table" id="error-history-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Zone</th>
+                <th>Severity</th>
+                <th>Message</th>
+                <th>Notified</th>
+              </tr>
+            </thead>
+            <tbody id="error-history-tbody">
+            </tbody>
+          </table>
+          <div id="error-history-empty" class="placeholder-text">No alerts recorded</div>
+        </div>
+      </div>
+
+      <!-- Alert System Status -->
+      <div class="card alert-summary-card">
+        <div class="card-title">Alert System Status</div>
+        <div class="alert-summary-grid">
+          <div class="alert-summary-item">
+            <div class="alert-summary-label">Active Alerts</div>
+            <div class="alert-summary-value" id="alert-active-count">0</div>
+          </div>
+          <div class="alert-summary-item">
+            <div class="alert-summary-label">Cooldowns</div>
+            <div class="alert-summary-value" id="alert-cooldown-count">0</div>
+          </div>
+          <div class="alert-summary-item">
+            <div class="alert-summary-label">Flapping Zones</div>
+            <div class="alert-summary-value" id="alert-flapping">None</div>
+          </div>
+          <div class="alert-summary-item">
+            <div class="alert-summary-label">Pushover</div>
+            <div class="alert-summary-value" id="alert-pushover-status">--</div>
+          </div>
+          <div class="alert-summary-item">
+            <div class="alert-summary-label">Email</div>
+            <div class="alert-summary-value" id="alert-email-status">--</div>
+          </div>
+        </div>
       </div>
 
     </div>

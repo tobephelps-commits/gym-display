@@ -640,4 +640,180 @@ input[readonly] {
     right: 12px;
     max-width: none;
   }
+
+  .health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .alert-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Health Page ── */
+
+/* Zone Health Grid */
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Zone Health Cards */
+.health-card {
+  border-left: 4px solid #333;
+}
+
+.health-card.status-healthy {
+  border-left-color: #48bb78;
+}
+
+.health-card.status-degraded {
+  border-left-color: #ecc94b;
+}
+
+.health-card.status-unhealthy {
+  border-left-color: #fc8181;
+}
+
+.health-status-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  margin-bottom: 6px;
+}
+
+.health-detail {
+  font-size: 0.85rem;
+  color: #ccc;
+  line-height: 1.8;
+}
+
+.health-error-msg {
+  font-size: 0.8rem;
+  color: #fc8181;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.health-overall-card {
+  border-left: 4px solid #4a9eff;
+  margin-bottom: 16px;
+}
+
+.health-overall-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.health-overall-text {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+/* Error History Table */
+.error-history-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.error-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.error-history-table th {
+  text-align: left;
+  color: #888;
+  font-weight: 500;
+  padding: 6px 8px;
+  border-bottom: 1px solid #333;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  background: #16213e;
+}
+
+.error-history-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #1a1a2e;
+  color: #ccc;
+  vertical-align: middle;
+}
+
+.error-history-table td.msg-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+/* Severity Badges */
+.severity-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.severity-badge.critical {
+  background: rgba(252, 129, 129, 0.2);
+  color: #fc8181;
+}
+
+.severity-badge.warning {
+  background: rgba(236, 201, 75, 0.2);
+  color: #ecc94b;
+}
+
+.severity-badge.info {
+  background: rgba(74, 158, 255, 0.2);
+  color: #4a9eff;
+}
+
+.severity-badge.suppressed {
+  background: rgba(136, 136, 136, 0.2);
+  color: #888;
+}
+
+/* Alert Summary Card */
+.alert-summary-card {
+  margin-bottom: 16px;
+}
+
+.alert-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.alert-summary-item {
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.alert-summary-label {
+  font-size: 0.78rem;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.alert-summary-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #eee;
 }
