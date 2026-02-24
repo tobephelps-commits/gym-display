@@ -68,9 +68,6 @@ class MindBodyClient {
       return this.token;
     } catch (err) {
       console.warn(`[MindBody] Token request failed: ${err.message}`);
-      if (err.response) {
-        console.warn(`[MindBody] Status: ${err.response.status}, Body: ${JSON.stringify(err.response.data)}`);
-      }
       return null;
     }
   }
