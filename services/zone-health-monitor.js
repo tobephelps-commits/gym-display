@@ -268,7 +268,7 @@ class ZoneHealthMonitor {
       const mbStatus = this._mindbodyClient.getStatus();
 
       if (!mbStatus.configured) {
-        this._updateZone('roster', STATUS.UNHEALTHY, 'MindBody not configured');
+        this._updateZone('roster', STATUS.DEGRADED, 'MindBody not configured (expected — API key pending)');
         return;
       }
 
