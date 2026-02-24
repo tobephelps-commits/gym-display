@@ -15,6 +15,19 @@ None
 - ✅ [v1.2 Go Live](milestones/v1.2-ROADMAP.md) (Phase 11) — SHIPPED 2026-02-24
 - ✅ [v1.3 Resilience](milestones/v1.3-ROADMAP.md) (Phases 12-15) — SHIPPED 2026-02-24
 
+## Current Milestone: v1.4 Video Scheduling
+
+### Phase 16: Day-of-Week Video Scheduling -- Complete
+
+**Goal:** Allow videos in the playlist to be assigned specific days of the week they should play, configured via a new column in the Google Sheets Playlist tab.
+**Depends on:** Phase 15
+**Plans:** 1/1 plans complete
+
+Plans:
+- [x] 16-01: Day-of-week filtering, admin panel, config docs
+
+---
+
 ## Phases
 
 **Phase Numbering:**
@@ -73,7 +86,7 @@ See [milestone archive](milestones/v1.3-ROADMAP.md) for full phase details.
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11
+Phases execute in numeric order: 1 → 2 → … → 15 → 16
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -92,3 +105,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 13. Graceful Degradation | v1.3 | 1/1 | Complete | 2026-02-24 |
 | 14. Tiered Alert System | v1.3 | 2/2 | Complete | 2026-02-24 |
 | 15. Admin Error Dashboard | v1.3 | 1/1 | Complete | 2026-02-24 |
+| 16. Day-of-Week Video Scheduling | v1.4 | 1/1 | Complete | 2026-02-24 |
