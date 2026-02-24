@@ -198,6 +198,8 @@ SERVICES=(
     "gym-cec-off.timer"
     "gym-cec-on.service"
     "gym-cec-on.timer"
+    "gym-nightly-reboot.service"
+    "gym-nightly-reboot.timer"
 )
 
 for svc in "${SERVICES[@]}"; do
@@ -217,6 +219,7 @@ echo ">>> Enabling services and timers..."
 systemctl enable gym-display.service
 systemctl enable gym-cec-off.timer
 systemctl enable gym-cec-on.timer
+systemctl enable gym-nightly-reboot.timer
 
 # Remove old gym-kiosk.service if it exists (kiosk now runs via labwc autostart)
 if systemctl is-enabled gym-kiosk.service &>/dev/null; then
@@ -328,7 +331,7 @@ echo "    - Chromium browser"
 echo "    - Python 3 + instaloader (Instagram Reels)"
 echo "    - CEC utilities (HDMI TV control)"
 echo "    - Systemd service: gym-display (Node.js server)"
-echo "    - Systemd timers: TV off at 21:00, on at 04:30"
+echo "    - Systemd timers: TV off at 21:00, on at 04:30, reboot at 03:30"
 echo "    - Journald limits: 100M / 7 days"
 echo ""
 echo "  Kiosk mode:"

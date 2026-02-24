@@ -1,0 +1,6 @@
+[Unit]
+Description=Nightly reboot for gym display system
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/reboot
