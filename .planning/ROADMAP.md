@@ -80,7 +80,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 13-01: TBD
+- [x] 13-01: Health-aware zone rotation with skip logic — completed 2026-02-24
 
 #### Phase 14: Tiered Alert System
 
@@ -122,6 +122,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 10. Web Admin Panel | v1.1 | 3/3 | Complete | 2026-02-23 |
 | 11. Production Credentials & Deployment | v1.2 | 1/1 | Complete (MindBody deferred) | 2026-02-24 |
 | 12. Zone Health Monitor | v1.3 | 1/1 | Complete | 2026-02-24 |
-| 13. Graceful Degradation | v1.3 | 0/? | Not started | - |
+| 13. Graceful Degradation | v1.3 | 1/1 | Complete | 2026-02-24 |
 | 14. Tiered Alert System | v1.3 | 0/? | Not started | - |
 | 15. Admin Error Dashboard | v1.3 | 0/? | Not started | - |
