@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** All milestones shipped — monitoring production
+**Current focus:** v1.3 Resilience — error handling, auto-recovery, alerting
 
 ## Current Position
 
-Milestone: v1.2 Go Live — SHIPPED
-Phase: 11 of 11 (complete)
-Plan: All complete
-Status: Production deployed
-Last activity: 2026-02-24 — v1.2 milestone archived
+Milestone: v1.3 Resilience
+Phase: 12 of 15 (Zone Health Monitor)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-02-24 - Milestone v1.3 created
 
-Progress: ██████████ 100% (all milestones shipped)
+Progress: ░░░░░░░░░░ 0%
 
 ## Deployment Info
 
@@ -95,16 +95,17 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 
 ### Blockers/Concerns Carried Forward
 
-- MindBody API returns 403 "You do not have access to siteId 24936" — needs activation in developer portal (roster zone non-functional until resolved)
+None (MindBody 403 is a known deferred issue — v1.3 health monitor will handle gracefully)
 
 ### Roadmap Evolution
 
 - v1.0 MVP shipped: Three-zone rotation system, 5 phases (Phase 1-5)
 - v1.1 Command Center shipped: Google Sheets hub + new zones + admin panel, 5 phases (Phase 6-10)
 - v1.2 Go Live shipped: Production deployment, reliability improvements, 1 phase (Phase 11)
+- Milestone v1.3 Resilience created: error handling, auto-recovery, alerting, 4 phases (Phase 12-15)
 
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: v1.2 milestone complete, all milestones shipped
+Stopped at: Milestone v1.3 initialization
 Resume file: None

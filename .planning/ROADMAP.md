@@ -13,6 +13,7 @@ None
 - ✅ [v1.0 MVP](milestones/v1.0-ROADMAP.md) (Phases 1-5) — SHIPPED 2026-02-23
 - ✅ [v1.1 Command Center](milestones/v1.1-ROADMAP.md) (Phases 6-10) — SHIPPED 2026-02-23
 - ✅ [v1.2 Go Live](milestones/v1.2-ROADMAP.md) (Phase 11) — SHIPPED 2026-02-24
+- 🚧 **v1.3 Resilience** — Phases 12-15 (in progress)
 
 ## Phases
 
@@ -57,6 +58,51 @@ See [milestone archive](milestones/v1.2-ROADMAP.md) for full phase details.
 
 </details>
 
+### 🚧 v1.3 Resilience (In Progress)
+
+**Milestone Goal:** Comprehensive error handling, auto-recovery, and admin notification across all zones for unattended operation
+
+#### Phase 12: Zone Health Monitor
+
+**Goal**: Track health of each zone (WOD, video, leaderboard, announcements, roster), detect failures (stalls, API errors, load failures, playback errors), implement retry logic before marking a zone unhealthy
+**Depends on**: Previous milestone complete
+**Research**: Unlikely (internal patterns — monitoring existing zone code)
+**Plans**: TBD
+
+Plans:
+- [ ] 12-01: TBD (run /gsd:plan-phase 12 to break down)
+
+#### Phase 13: Graceful Degradation
+
+**Goal**: Unhealthy zones get automatically skipped in rotation, re-added when they recover — rotation never stalls or shows broken content
+**Depends on**: Phase 12
+**Research**: Unlikely (internal patterns — modifying existing rotation logic)
+**Plans**: TBD
+
+Plans:
+- [ ] 13-01: TBD
+
+#### Phase 14: Tiered Alert System
+
+**Goal**: SMS for critical failures (display completely down, all zones failed), email for warnings (single zone down, API errors, download failures). Configurable thresholds.
+**Depends on**: Phase 13
+**Research**: Likely (external services — email/SMS APIs, evaluate free/low-cost options)
+**Research topics**: Free/low-cost email services (nodemailer with Gmail, SendGrid free tier), SMS options (Twilio free tier, Pushover as alternative), Node.js integration patterns
+**Plans**: TBD
+
+Plans:
+- [ ] 14-01: TBD
+
+#### Phase 15: Admin Error Dashboard
+
+**Goal**: Error history log, current zone health status with uptime, alert delivery log — all visible on the existing web admin panel
+**Depends on**: Phase 14
+**Research**: Unlikely (internal patterns — extending existing Express.js admin panel)
+**Plans**: TBD
+
+Plans:
+- [ ] 15-01: TBD
+
 ## Progress
 
 **Execution Order:**
@@ -75,3 +121,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 9. Announcements Zone | v1.1 | 2/2 | Complete | 2026-02-23 |
 | 10. Web Admin Panel | v1.1 | 3/3 | Complete | 2026-02-23 |
 | 11. Production Credentials & Deployment | v1.2 | 1/1 | Complete (MindBody deferred) | 2026-02-24 |
+| 12. Zone Health Monitor | v1.3 | 0/? | Not started | - |
+| 13. Graceful Degradation | v1.3 | 0/? | Not started | - |
+| 14. Tiered Alert System | v1.3 | 0/? | Not started | - |
+| 15. Admin Error Dashboard | v1.3 | 0/? | Not started | - |
