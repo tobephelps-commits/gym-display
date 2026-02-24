@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** v1.3 Resilience — error handling, auto-recovery, alerting
+**Current focus:** v1.3 Resilience shipped — planning next milestone
 
 ## Current Position
 
-Milestone: v1.3 Resilience
-Phase: 15 of 15 (Admin Error Dashboard)
-Plan: 1 of 1 in current phase
-Status: Phase complete — Health tab added to admin panel, v1.3 Resilience feature-complete
-Last activity: 2026-02-24 - Completed 15-01-PLAN.md
+Milestone: v1.3 Resilience — SHIPPED 2026-02-24
+Phase: All 15 phases complete across 4 milestones
+Plan: Not started
+Status: Ready for next milestone planning
+Last activity: 2026-02-24 — v1.3 Resilience milestone complete
 
-Progress: ########## 100%
+Progress: All milestones shipped
 
 ## Deployment Info
 
@@ -92,20 +92,21 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 ### Pending Todos
 
 - [ ] Activate MindBody API key for site ID 24936 in MindBody developer portal
+- [ ] Configure Pushover and Gmail credentials in config.yaml on Pi
 
 ### Blockers/Concerns Carried Forward
 
-None (MindBody 403 is a known deferred issue — v1.3 health monitor will handle gracefully)
+None
 
 ### Roadmap Evolution
 
 - v1.0 MVP shipped: Three-zone rotation system, 5 phases (Phase 1-5)
 - v1.1 Command Center shipped: Google Sheets hub + new zones + admin panel, 5 phases (Phase 6-10)
 - v1.2 Go Live shipped: Production deployment, reliability improvements, 1 phase (Phase 11)
-- Milestone v1.3 Resilience created: error handling, auto-recovery, alerting, 4 phases (Phase 12-15)
+- v1.3 Resilience shipped: Zone health monitoring, graceful degradation, alerting, admin dashboard, 4 phases (Phase 12-15)
 
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 15-01-PLAN.md — Phase 15 complete, v1.3 Resilience milestone complete
-Resume file: .planning/phases/15-admin-error-dashboard/15-01-SUMMARY.md
+Stopped at: v1.3 Resilience milestone complete — all 4 milestones shipped
+Resume file: .planning/MILESTONES.md

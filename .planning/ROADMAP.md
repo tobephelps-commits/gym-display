@@ -13,7 +13,7 @@ None
 - ✅ [v1.0 MVP](milestones/v1.0-ROADMAP.md) (Phases 1-5) — SHIPPED 2026-02-23
 - ✅ [v1.1 Command Center](milestones/v1.1-ROADMAP.md) (Phases 6-10) — SHIPPED 2026-02-23
 - ✅ [v1.2 Go Live](milestones/v1.2-ROADMAP.md) (Phase 11) — SHIPPED 2026-02-24
-- 🚧 **v1.3 Resilience** — Phases 12-15 (in progress)
+- ✅ [v1.3 Resilience](milestones/v1.3-ROADMAP.md) (Phases 12-15) — SHIPPED 2026-02-24
 
 ## Phases
 
@@ -58,51 +58,17 @@ See [milestone archive](milestones/v1.2-ROADMAP.md) for full phase details.
 
 </details>
 
-### 🚧 v1.3 Resilience (In Progress)
+<details>
+<summary>v1.3 Resilience (Phases 12-15) — SHIPPED 2026-02-24</summary>
 
-**Milestone Goal:** Comprehensive error handling, auto-recovery, and admin notification across all zones for unattended operation
+- [x] Phase 12: Zone Health Monitor (1/1 plans) — completed 2026-02-24
+- [x] Phase 13: Graceful Degradation (1/1 plans) — completed 2026-02-24
+- [x] Phase 14: Tiered Alert System (2/2 plans) — completed 2026-02-24
+- [x] Phase 15: Admin Error Dashboard (1/1 plans) — completed 2026-02-24
 
-#### Phase 12: Zone Health Monitor
+See [milestone archive](milestones/v1.3-ROADMAP.md) for full phase details.
 
-**Goal**: Track health of each zone (WOD, video, leaderboard, announcements, roster), detect failures (stalls, API errors, load failures, playback errors), implement retry logic before marking a zone unhealthy
-**Depends on**: Previous milestone complete
-**Research**: Unlikely (internal patterns — monitoring existing zone code)
-**Plans**: 1
-
-Plans:
-- [x] 12-01: Zone Health Monitor service + server integration — completed 2026-02-24
-
-#### Phase 13: Graceful Degradation
-
-**Goal**: Unhealthy zones get automatically skipped in rotation, re-added when they recover — rotation never stalls or shows broken content
-**Depends on**: Phase 12
-**Research**: Unlikely (internal patterns — modifying existing rotation logic)
-**Plans**: 1
-
-Plans:
-- [x] 13-01: Health-aware zone rotation with skip logic — completed 2026-02-24
-
-#### Phase 14: Tiered Alert System
-
-**Goal**: SMS for critical failures (display completely down, all zones failed), email for warnings (single zone down, API errors, download failures). Configurable thresholds.
-**Depends on**: Phase 13
-**Research**: Likely (external services — email/SMS APIs, evaluate free/low-cost options)
-**Research topics**: Free/low-cost email services (nodemailer with Gmail, SendGrid free tier), SMS options (Twilio free tier, Pushover as alternative), Node.js integration patterns
-**Plans**: 2
-
-Plans:
-- [x] 14-01: Core alert services (NotificationService + AlertManager) — completed 2026-02-24
-- [x] 14-02: Server integration (config, health monitor hookup, admin API) — completed 2026-02-24
-
-#### Phase 15: Admin Error Dashboard
-
-**Goal**: Error history log, current zone health status with uptime, alert delivery log — all visible on the existing web admin panel
-**Depends on**: Phase 14
-**Research**: Unlikely (internal patterns — extending existing Express.js admin panel)
-**Plans**: 1
-
-Plans:
-- [x] 15-01: Health tab (zone health cards, error history, alert status) — completed 2026-02-24
+</details>
 
 ## Progress
 

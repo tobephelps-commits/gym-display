@@ -34,10 +34,15 @@ The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cyc
 - ✓ Team vs Team leaderboard zone with color-coded cards and rankings — v1.1
 - ✓ Announcements zone with urgent/normal priority and auto-skip — v1.1
 - ✓ Web admin panel with live dashboard, settings editor, config backup/restore — v1.1
+- ✓ Zone health monitoring with per-zone status tracking, retry logic, and staleness detection — v1.3
+- ✓ Graceful degradation: unhealthy zones auto-skipped in rotation, automatic recovery — v1.3
+- ✓ Tiered alert system: Pushover for critical, Gmail email for warnings, with dedup/cooldowns/batching — v1.3
+- ✓ Admin Health tab: zone health cards, error history log, alert system status — v1.3
 
 ### Active
 
 - [ ] MindBody API key activation for site 24936 (external dependency — roster zone blocked)
+- [ ] Configure Pushover and Gmail credentials in config.yaml for alert notifications
 
 ### Out of Scope
 
@@ -48,16 +53,19 @@ The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cyc
 
 ## Context
 
-Shipped v1.2 with ~6,498 LOC (JS: 4,644 / HTML: 676 / CSS: 1,178).
-Tech stack: Node.js + Express backend, vanilla HTML/CSS/JS frontend, Puppeteer for WodScreen, YouTube IFrame API, yt-dlp for Instagram Reels, Google Sheets API v4 for data hub, MindBody Public API v6 for roster.
+Shipped v1.3 with ~6,452 LOC across services, server, and frontend.
+Tech stack: Node.js + Express backend, vanilla HTML/CSS/JS frontend, Puppeteer for WodScreen, YouTube IFrame API, yt-dlp for Instagram Reels, Google Sheets API v4 for data hub, MindBody Public API v6 for roster, pushover-notifications + nodemailer for alerts.
 Five rotation zones: WOD, video, roster, leaderboard, announcements.
-Web admin panel at /admin for configuration and monitoring.
+Web admin panel at /admin with Dashboard, Settings, and Health tabs.
+Zone health monitoring with graceful degradation (unhealthy zones auto-skipped).
+Tiered alert system: Pushover for critical, Gmail for warnings, with dedup/cooldowns/flapping detection.
 Deployed on Raspberry Pi 5 running Raspberry Pi OS (Bookworm) with Wayland/labwc compositor.
 Remote access via Tailscale SSH. Deploy workflow: git push from Windows, git pull on Pi via SSH.
 Nightly reboot at 3:30 AM, CEC TV off at 9 PM / on at 4:30 AM. Kiosk auto-restarts on Chromium crash.
 
 Known issues:
 - MindBody API key not activated for site 24936 — roster zone non-functional until activated in MindBody developer portal
+- Pushover and Gmail credentials not yet configured — alert notifications won't deliver until added to config.yaml
 
 ## Constraints
 
@@ -94,6 +102,14 @@ Known issues:
 | Defer MindBody roster | API key lacks site 24936 access; external dependency, not a code issue | Pending |
 | Nightly Pi reboot | Chromium network service crashed overnight causing blank screen; 3:30 AM reboot prevents stale state | Good |
 | Kiosk restart loop | Replace single `exec` with while loop; auto-recovers from Chromium crashes | Good |
+| Dependency injection for ZoneHealthMonitor | Service refs via constructor, not require(); keeps it testable and decoupled | Good |
+| Piggyback health on /api/config poll | Health data on existing 30s poll instead of new endpoint; no extra network overhead | Good |
+| Skip unhealthy only, not degraded | Degraded means partial functionality; showing stale cached data is better than nothing | Good |
+| Cycle guard for all-unhealthy | If all zones unhealthy, show next zone anyway to prevent infinite loop | Good |
+| Gmail SMTP via nodemailer | No custom domain needed for personal gym project; simpler than Resend/SendGrid | Good |
+| In-memory alert state, no persistence | Pi reboots nightly; fresh alert on reboot for still-unhealthy zones is actually useful | Good |
+| Late-binding via setAlertManager() | Avoids circular dependency between health monitor and alert manager | Good |
+| Try/catch at alert boundaries | Notification failures never crash the display or disrupt health monitoring | Good |
 
 ---
-*Last updated: 2026-02-24 after v1.2 milestone*
+*Last updated: 2026-02-24 after v1.3 milestone*

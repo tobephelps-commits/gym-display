@@ -1,5 +1,33 @@
 # Project Milestones: Gym Display System
 
+## v1.3 Resilience (Shipped: 2026-02-24)
+
+**Delivered:** Comprehensive error handling, auto-recovery, and admin notification across all zones — zone health monitoring, graceful degradation, tiered alerting (Pushover + email), and a Health tab in the admin panel for visual monitoring.
+
+**Phases completed:** 12-15 (5 plans total)
+
+**Key accomplishments:**
+
+- ZoneHealthMonitor service tracking all 5 zones with configurable thresholds and staleness detection
+- Health-aware zone rotation: unhealthy zones auto-skipped, automatic recovery when zones come back
+- Tiered alert system: Pushover for critical alerts, Gmail email for warnings, with dedup, cooldowns, batching, and flapping detection
+- AlertManager integration with late-binding dependency injection and boundary-protected dispatch
+- Health tab in admin panel: zone health cards, error history log (last 50 alerts), alert system status
+- All alert/monitoring failures isolated with try/catch — display never crashes from notification errors
+
+**Stats:**
+
+- 23 files created/modified (+3,140 lines)
+- ~6,452 lines of code total
+- 4 phases, 5 plans, ~10 tasks
+- 1 day (Feb 24, 2026)
+
+**Git range:** `998a50a` → `374866a`
+
+**What's next:** MindBody API key activation, then system is fully production-complete with monitoring and alerting.
+
+---
+
 ## v1.2 Go Live (Shipped: 2026-02-24)
 
 **Delivered:** Production deployment with verified video/reels, leaderboard, announcements, and WOD zones on the gym TV, plus reliability improvements (kiosk auto-restart, nightly reboot, CEC retries).
