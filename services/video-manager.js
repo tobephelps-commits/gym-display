@@ -23,6 +23,24 @@ function isYouTubeUrl(url) {
   return /(?:youtu\.be\/|youtube\.com\/)/.test(url);
 }
 
+/**
+ * Check if a video is scheduled for today based on its days string.
+ * @param {string} daysStr - Comma-separated day abbreviations (e.g. "Mon,Wed,Fri") or empty/undefined
+ * @returns {boolean} True if video should play today (or if no day restriction)
+ */
+function isScheduledForToday(daysStr) {
+  if (!daysStr || typeof daysStr !== 'string' || daysStr.trim() === '') {
+    return true; // No restriction — plays every day
+  }
+
+  const config = configLoader.getConfig() || {};
+  const timezone = (config.system && config.system.timezone) || undefined;
+  const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'short', timeZone: timezone });
+
+  const days = daysStr.split(',').map(d => d.trim().toLowerCase());
+  return days.includes(currentDay.toLowerCase());
+}
+
 class VideoManager {
   constructor() {
     this._playlist = [];
@@ -91,6 +109,9 @@ class VideoManager {
       const enabled = String(row.enabled || '').trim().toLowerCase();
       if (!['true', 'yes', '1'].includes(enabled)) continue;
 
+      // Day-of-week filter
+      if (!isScheduledForToday(row.days)) continue;
+
       playlist.push({
         videoId,
         title: row.title || 'Untitled',
@@ -119,6 +140,7 @@ class VideoManager {
       this._playlist = [];
       for (const entry of videos) {
         if (!entry.enabled) continue;
+        if (!isScheduledForToday(entry.days)) continue;
 
         const videoId = extractYouTubeId(entry.url);
         if (!videoId) {
@@ -140,7 +162,11 @@ class VideoManager {
       this._currentIndex = 0;
     }
 
-    console.log(`[VideoManager] Playlist loaded from ${this._source}: ${this._playlist.length} videos`);
+    // Log day-of-week filtering info
+    const _cfg = configLoader.getConfig() || {};
+    const _tz = (_cfg.system && _cfg.system.timezone) || undefined;
+    const _today = new Date().toLocaleDateString('en-US', { weekday: 'short', timeZone: _tz });
+    console.log(`[VideoManager] Playlist loaded from ${this._source}: ${this._playlist.length} videos (${_today})`);
   }
 
   /**
