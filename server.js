@@ -14,10 +14,14 @@ const mindbodyClient = require('./services/mindbody');
 const sheetsClient = require('./services/sheets-client');
 const leaderboardService = require('./services/leaderboard-service');
 const announcementsService = require('./services/announcements-service');
+const healthMonitor = require('./services/zone-health-monitor');
 const { createWodProxy } = require('./services/wod-proxy');
 
 const config = configLoader.getConfig();
 const port = (config.system && config.system.port) || 3000;
+
+// Health monitor instance — created after server starts
+let monitor = null;
 
 const app = express();
 app.use(express.json());
@@ -75,6 +79,14 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+// Zone health status endpoint (no auth — health data is non-sensitive)
+app.get('/api/health/zones', (req, res) => {
+  if (!monitor) {
+    return res.json({ overall: 'unknown', zones: {}, timestamp: new Date().toISOString() });
+  }
+  res.json(monitor.getHealthStatus());
 });
 
 // Config endpoint — returns sanitized config (no credentials)
@@ -326,7 +338,8 @@ app.get('/api/admin/status', adminAuthMiddleware, (req, res) => {
     announcements: {
       active: announcementsService.isActive(),
       count: announceData.count
-    }
+    },
+    health: monitor ? monitor.getHealthStatus() : null
   });
 });
 
@@ -398,8 +411,11 @@ app.post('/api/admin/refresh/:service', adminAuthMiddleware, async (req, res) =>
         videoManager.resetPlaylist();
         zoneController.bumpRefreshVersion();
         return res.json({ success: true, service, message: 'Video playlist reset' });
+      case 'health':
+        if (monitor) monitor.checkAll();
+        return res.json({ success: true, service, message: 'Health check triggered' });
       default:
-        return res.status(400).json({ error: `Unknown service: ${service}`, supported: ['wod', 'sheets', 'videos'] });
+        return res.status(400).json({ error: `Unknown service: ${service}`, supported: ['wod', 'sheets', 'videos', 'health'] });
     }
   } catch (err) {
     console.error(`[Admin] Refresh ${service} failed: ${err.message}`);
@@ -453,6 +469,24 @@ const server = app.listen(port, bindAddress, () => {
     console.log('[Server] Sheets polling initialized');
   } catch (err) {
     console.error(`[Server] Sheets initialization failed (non-fatal): ${err.message}`);
+  }
+
+  // Initialize zone health monitor (after all services are initialized)
+  try {
+    monitor = healthMonitor.create({
+      wodScraper,
+      videoManager,
+      reelsFetcher,
+      mindbodyClient,
+      sheetsClient,
+      leaderboardService,
+      announcementsService,
+      configLoader
+    });
+    monitor.startMonitoring();
+    console.log('[Server] Zone health monitor started');
+  } catch (err) {
+    console.error(`[Server] Health monitor initialization failed (non-fatal): ${err.message}`);
   }
 });
 

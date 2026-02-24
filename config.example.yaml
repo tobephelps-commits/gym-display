@@ -86,3 +86,9 @@ system:
   # Optional: admin panel auth token. If not set, admin panel has open access (fine for local Pi).
   # Set this if the Pi is accessible from outside the local network.
   # admin_token: "your_secret_token"
+
+# Zone Health Monitoring (v1.3)
+health:
+  check_interval_seconds: 60      # How often to check zone health
+  staleness_minutes: 10           # Data older than this triggers degraded status
+  max_consecutive_failures: 5     # Consecutive failures before marking unhealthy
