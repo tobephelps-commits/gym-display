@@ -128,10 +128,27 @@ app.get('/api/config', (req, res) => {
   sanitized.zones.rotation_order = zoneState.rotationOrder;
   sanitized.zones.boostActive = zoneController.isBoostActive();
 
+  // Add per-zone health status for frontend rotation skip logic
+  if (monitor) {
+    const healthStatus = monitor.getHealthStatus();
+    sanitized.health = {
+      zones: {}
+    };
+    for (const [zone, state] of Object.entries(healthStatus.zones)) {
+      sanitized.health.zones[zone] = state.status; // 'healthy', 'degraded', 'unhealthy'
+    }
+  } else {
+    sanitized.health = { zones: {} };
+  }
+
   res.json(sanitized);
 });
 
 // Zone API endpoints
+app.get('/api/zones', (req, res) => {
+  res.json(zoneController.getZoneState());
+});
+
 app.get('/api/zones/current', (req, res) => {
   const state = zoneController.getZoneState();
   state.boostActive = zoneController.isBoostActive();
