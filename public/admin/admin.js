@@ -330,14 +330,14 @@
         document.getElementById('playlist-sheets-msg').style.display = 'none';
         document.getElementById('playlist-config-section').style.display = 'block';
         playlistVideos = (cfg.videos || []).map(function (v) {
-          return { url: v.url, title: v.title, enabled: v.enabled !== false };
+          return { url: v.url, title: v.title, enabled: v.enabled !== false, days: v.days || '' };
         });
         renderPlaylist();
       }
     }).catch(function () {
       // Fallback: show config-based playlist
       playlistVideos = (cfg.videos || []).map(function (v) {
-        return { url: v.url, title: v.title, enabled: v.enabled !== false };
+        return { url: v.url, title: v.title, enabled: v.enabled !== false, days: v.days || '' };
       });
       renderPlaylist();
     });
@@ -368,6 +368,17 @@
       });
       tdEnabled.appendChild(enabledCb);
 
+      var tdDays = document.createElement('td');
+      var daysInput = document.createElement('input');
+      daysInput.type = 'text';
+      daysInput.placeholder = 'e.g. Mon,Wed,Fri';
+      daysInput.value = vid.days || '';
+      daysInput.style.cssText = 'width:120px;font-size:12px;';
+      daysInput.addEventListener('change', function () {
+        playlistVideos[idx].days = daysInput.value.trim();
+      });
+      tdDays.appendChild(daysInput);
+
       var tdRemove = document.createElement('td');
       var removeBtn = document.createElement('button');
       removeBtn.className = 'btn-remove';
@@ -384,6 +395,7 @@
       tr.appendChild(tdTitle);
       tr.appendChild(tdUrl);
       tr.appendChild(tdEnabled);
+      tr.appendChild(tdDays);
       tr.appendChild(tdRemove);
       tbody.appendChild(tr);
     });
@@ -423,7 +435,7 @@
         return;
       }
 
-      playlistVideos.push({ url: url, title: title || url, enabled: true });
+      playlistVideos.push({ url: url, title: title || url, enabled: true, days: '' });
       renderPlaylist();
       addVideoForm.style.display = 'none';
       addVideoBtn.style.display = '';
