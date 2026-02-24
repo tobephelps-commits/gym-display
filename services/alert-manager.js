@@ -46,6 +46,11 @@ class AlertManager {
     this._notifications = notificationService;
     this._config = Object.assign({}, DEFAULTS, config || {});
 
+    // Per-zone alert suppression (zones listed here send no notifications)
+    this._suppressedZones = new Set(
+      (config && config.suppressed_zones || []).map(function(z) { return z.toLowerCase(); })
+    );
+
     // State
     this._activeAlerts = new Map();       // Map<fingerprint, { firstSeen, lastSeen, count, notified }>
     this._cooldowns = new Map();          // Map<fingerprint, lastNotifiedTimestamp>
@@ -68,6 +73,11 @@ class AlertManager {
    * @param {string} [errorMsg] - Error description if unhealthy/degraded
    */
   handleStatusChange(zoneName, oldStatus, newStatus, errorMsg) {
+    // Skip suppressed zones entirely (no tracking, no notifications)
+    if (this._suppressedZones.has(zoneName.toLowerCase())) {
+      return;
+    }
+
     // Track recent checks for flapping detection
     this._trackCheck(zoneName, newStatus);
 
@@ -479,7 +489,8 @@ class AlertManager {
     return {
       activeAlerts: this._activeAlerts.size,
       cooldowns: this._cooldowns.size,
-      flapping
+      flapping,
+      suppressedZones: Array.from(this._suppressedZones)
     };
   }
 

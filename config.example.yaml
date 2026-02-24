@@ -114,6 +114,7 @@ alerts:
     cooldown_warning_minutes: 120  # Don't re-alert WARNING for same issue within this window
     batch_window_seconds: 30       # Collect warnings for this long, send as digest
     recovery_threshold: 2          # Consecutive healthy checks before "all clear" notification
+    suppressed_zones: []           # Zones to silence alerts for, e.g. [roster, leaderboard]
 
 # Zone Health Monitoring (v1.3)
 health:
