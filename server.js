@@ -15,6 +15,8 @@ const sheetsClient = require('./services/sheets-client');
 const leaderboardService = require('./services/leaderboard-service');
 const announcementsService = require('./services/announcements-service');
 const healthMonitor = require('./services/zone-health-monitor');
+const notificationService = require('./services/notification-service');
+const alertManager = require('./services/alert-manager');
 const { createWodProxy } = require('./services/wod-proxy');
 
 const config = configLoader.getConfig();
@@ -22,6 +24,8 @@ const port = (config.system && config.system.port) || 3000;
 
 // Health monitor instance — created after server starts
 let monitor = null;
+let notifications = null;
+let alerts = null;
 
 const app = express();
 app.use(express.json());
@@ -140,6 +144,9 @@ app.get('/api/config', (req, res) => {
   } else {
     sanitized.health = { zones: {} };
   }
+
+  // Add alert system status
+  sanitized.alerts = alerts ? alerts.getStatus() : null;
 
   res.json(sanitized);
 });
@@ -411,6 +418,15 @@ app.post('/api/admin/config/restore', adminAuthMiddleware, (req, res) => {
   }
 });
 
+// GET /api/admin/alerts — Alert system status and history
+app.get('/api/admin/alerts', adminAuthMiddleware, (req, res) => {
+  res.json({
+    notifications: notifications ? notifications.getStatus() : null,
+    alerts: alerts ? alerts.getStatus() : null,
+    history: alerts ? alerts.getAlertHistory() : []
+  });
+});
+
 // POST /api/admin/refresh/:service — Trigger manual service refresh
 app.post('/api/admin/refresh/:service', adminAuthMiddleware, async (req, res) => {
   const service = req.params.service;
@@ -504,6 +520,33 @@ const server = app.listen(port, bindAddress, () => {
     console.log('[Server] Zone health monitor started');
   } catch (err) {
     console.error(`[Server] Health monitor initialization failed (non-fatal): ${err.message}`);
+  }
+
+  // Initialize alert system (after health monitor)
+  try {
+    const alertsConfig = configLoader.getConfig().alerts || {};
+    notifications = notificationService.create({
+      pushover: {
+        user_key: alertsConfig.pushover?.user_key || '',
+        app_token: alertsConfig.pushover?.app_token || ''
+      },
+      email: {
+        gmail_user: alertsConfig.email?.gmail_user || '',
+        gmail_app_password: alertsConfig.email?.gmail_app_password || '',
+        recipients: (alertsConfig.email?.recipients || []).filter(r => r)
+      }
+    });
+
+    alerts = alertManager.create(notifications, alertsConfig.thresholds || {});
+    console.log('[Server] Alert system initialized');
+  } catch (err) {
+    console.error(`[Server] Alert system initialization failed (non-fatal): ${err.message}`);
+  }
+
+  // Connect alert manager to health monitor (late-binding avoids circular dependency)
+  if (monitor && alerts) {
+    monitor.setAlertManager(alerts);
+    console.log('[Server] Alert manager connected to health monitor');
   }
 });
 

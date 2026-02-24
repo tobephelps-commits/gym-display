@@ -87,6 +87,34 @@ system:
   # Set this if the Pi is accessible from outside the local network.
   # admin_token: "your_secret_token"
 
+# Alerts (v1.3 — Tiered Alert System)
+# Critical alerts: Pushover push notifications (wake-up capable)
+# Warning alerts: Email via Gmail
+# Leave sections unconfigured to disable that channel
+alerts:
+  # Pushover for critical alerts (all zones down, persistent failures)
+  # Sign up at pushover.net, buy app ($4.99 one-time)
+  pushover:
+    user_key: ""          # Your Pushover user key
+    app_token: ""         # Your Pushover application token
+
+  # Email for warning alerts (single zone down, degraded zones)
+  # Uses Gmail with App Password — generate at Google Account > Security > App Passwords
+  email:
+    gmail_user: ""        # e.g. yourname@gmail.com
+    gmail_app_password: "" # 16-character App Password (NOT your regular password)
+    recipients:           # Who receives warning emails
+      - ""                # e.g. owner@gmail.com
+
+  # Alert thresholds (defaults are sensible, adjust if needed)
+  thresholds:
+    min_failures_warning: 1       # Consecutive failures before WARNING
+    min_failures_critical: 3      # Consecutive failures before CRITICAL
+    cooldown_critical_minutes: 30  # Don't re-alert CRITICAL for same issue within this window
+    cooldown_warning_minutes: 120  # Don't re-alert WARNING for same issue within this window
+    batch_window_seconds: 30       # Collect warnings for this long, send as digest
+    recovery_threshold: 2          # Consecutive healthy checks before "all clear" notification
+
 # Zone Health Monitoring (v1.3)
 health:
   check_interval_seconds: 60      # How often to check zone health
