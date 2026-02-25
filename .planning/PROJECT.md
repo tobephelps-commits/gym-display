@@ -38,6 +38,11 @@ The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cyc
 - ✓ Graceful degradation: unhealthy zones auto-skipped in rotation, automatic recovery — v1.3
 - ✓ Tiered alert system: Pushover for critical, Gmail email for warnings, with dedup/cooldowns/batching — v1.3
 - ✓ Admin Health tab: zone health cards, error history log, alert system status — v1.3
+- ✓ Day-of-week video scheduling via Google Sheets "Days" column with timezone-aware filtering — v1.4
+- ✓ Video focus mode for fullscreen playback from admin panel — v1.4
+- ✓ Frontend watchdog for automatic display recovery (blank/stuck screen detection) — v1.4
+- ✓ Per-zone alert suppression via suppressed_zones config — v1.4
+- ✓ Sheets Instructions tab in admin panel for coach onboarding — v1.4
 
 ### Active
 
@@ -53,12 +58,15 @@ The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cyc
 
 ## Context
 
-Shipped v1.3 with ~6,452 LOC across services, server, and frontend.
+Shipped v1.4 with ~8,599 LOC across services, server, and frontend.
 Tech stack: Node.js + Express backend, vanilla HTML/CSS/JS frontend, Puppeteer for WodScreen, YouTube IFrame API, yt-dlp for Instagram Reels, Google Sheets API v4 for data hub, MindBody Public API v6 for roster, pushover-notifications + nodemailer for alerts.
 Five rotation zones: WOD, video, roster, leaderboard, announcements.
-Web admin panel at /admin with Dashboard, Settings, and Health tabs.
+Web admin panel at /admin with Dashboard, Settings, Health, and Sheets Instructions tabs.
+Day-of-week video scheduling via Google Sheets "Days" column with timezone-aware filtering.
+Video focus mode for fullscreen playback from admin panel.
 Zone health monitoring with graceful degradation (unhealthy zones auto-skipped).
-Tiered alert system: Pushover for critical, Gmail for warnings, with dedup/cooldowns/flapping detection.
+Tiered alert system: Pushover for critical, Gmail for warnings, with dedup/cooldowns/flapping detection. Per-zone suppression available.
+Frontend watchdog for automatic display recovery (blank/stuck screen detection).
 Deployed on Raspberry Pi 5 running Raspberry Pi OS (Bookworm) with Wayland/labwc compositor.
 Remote access via Tailscale SSH. Deploy workflow: git push from Windows, git pull on Pi via SSH.
 Nightly reboot at 3:30 AM, CEC TV off at 9 PM / on at 4:30 AM. Kiosk auto-restarts on Chromium crash.
@@ -110,6 +118,10 @@ Known issues:
 | In-memory alert state, no persistence | Pi reboots nightly; fresh alert on reboot for still-unhealthy zones is actually useful | Good |
 | Late-binding via setAlertManager() | Avoids circular dependency between health monitor and alert manager | Good |
 | Try/catch at alert boundaries | Notification failures never crash the display or disrupt health monitoring | Good |
+| Day filtering at playlist build time | Playlist changes at midnight naturally via existing 60s poll; simpler than per-selection filtering | Good |
+| en-US short weekday format | Mon/Tue/Wed/Thu/Fri/Sat/Sun matches toLocaleDateString output; consistent and familiar | Good |
+| Frontend watchdog | Detects blank/stuck screens and triggers automatic recovery; prevents silent failures | Good |
+| Per-zone alert suppression | suppressed_zones config silences known issues (e.g., MindBody) without disabling all alerts | Good |
 
 ---
-*Last updated: 2026-02-24 after v1.3 milestone*
+*Last updated: 2026-02-25 after v1.4 milestone*

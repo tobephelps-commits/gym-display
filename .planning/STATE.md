@@ -2,20 +2,20 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-24)
+See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** v1.4 Video Scheduling — day-of-week playlist filtering
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Milestone: v1.4 Video Scheduling
-Phase: Phase 16 — Day-of-Week Video Scheduling (1/1 plans complete)
-Plan: 1 of 1 in current phase
-Status: Phase complete
-Last activity: 2026-02-24 — Completed 16-01-PLAN.md
+Milestone: v1.4 Video Scheduling — SHIPPED 2026-02-25
+Phase: All phases complete (16 total across v1.0–v1.4)
+Plan: N/A
+Status: Ready to plan next milestone
+Last activity: 2026-02-25 — v1.4 milestone complete
 
-Progress: v1.0–v1.3 shipped, v1.4 complete
+Progress: v1.0–v1.4 shipped
 
 ## Deployment Info
 
@@ -104,10 +104,10 @@ None
 - v1.1 Command Center shipped: Google Sheets hub + new zones + admin panel, 5 phases (Phase 6-10)
 - v1.2 Go Live shipped: Production deployment, reliability improvements, 1 phase (Phase 11)
 - v1.3 Resilience shipped: Zone health monitoring, graceful degradation, alerting, admin dashboard, 4 phases (Phase 12-15)
-- v1.4 Video Scheduling shipped: Phase 16 — day-of-week video scheduling via Google Sheets
+- v1.4 Video Scheduling shipped: Day-of-week scheduling, video focus mode, frontend watchdog, operational polish, 1 phase (Phase 16)
 
 ## Session Continuity
 
-Last session: 2026-02-24
-Stopped at: Completed 16-01-PLAN.md — v1.4 Video Scheduling milestone complete
+Last session: 2026-02-25
+Stopped at: v1.4 milestone completed and archived
 Resume file: .planning/ROADMAP.md

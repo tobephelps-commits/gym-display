@@ -1,5 +1,33 @@
 # Project Milestones: Gym Display System
 
+## v1.4 Video Scheduling (Shipped: 2026-02-25)
+
+**Delivered:** Day-of-week video scheduling via Google Sheets, video focus mode, frontend watchdog for automatic display recovery, and operational polish (alert suppression, clean restarts, Sheets instructions for coaches).
+
+**Phases completed:** 16 (1 plan total)
+
+**Key accomplishments:**
+
+- Day-of-week playlist filtering via isScheduledForToday() with timezone-aware matching (Sheets "Days" column + config.yaml)
+- Video focus mode for fullscreen video playback from admin panel
+- Sheets Instructions tab in admin panel guiding coaches on spreadsheet setup
+- Frontend watchdog for automatic display recovery (detects blank/stuck screens)
+- Per-zone alert suppression via suppressed_zones config (silence known issues like MindBody)
+- SIGTERM handler for clean systemctl restarts without orphaned processes
+
+**Stats:**
+
+- 13 files created/modified (+707 lines)
+- ~8,599 lines of code total (JS: 6,231 / HTML: 1,014 / CSS: 1,354)
+- 1 phase, 1 plan, 3 tasks + 10 additional commits
+- 2 days (Feb 24-25, 2026)
+
+**Git range:** `4e06ee7` → `9a81d19`
+
+**What's next:** MindBody API key activation, configure Pushover/Gmail credentials, then system is fully production-complete.
+
+---
+
 ## v1.3 Resilience (Shipped: 2026-02-24)
 
 **Delivered:** Comprehensive error handling, auto-recovery, and admin notification across all zones — zone health monitoring, graceful degradation, tiered alerting (Pushover + email), and a Health tab in the admin panel for visual monitoring.
