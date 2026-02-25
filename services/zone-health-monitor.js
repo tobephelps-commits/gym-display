@@ -236,6 +236,12 @@ class ZoneHealthMonitor {
         return;
       }
 
+      // No videos today — but if that's just day-of-week filtering, it's normal
+      if (this._videoManager.isFilteredBySchedule()) {
+        this._updateZone('video', STATUS.HEALTHY);
+        return;
+      }
+
       // No videos — check reels
       const reelsEnabled = this._reelsFetcher.isEnabled();
       const reelsStatus = this._reelsFetcher.getStatus();

@@ -46,6 +46,7 @@ class VideoManager {
     this._playlist = [];
     this._currentIndex = 0;
     this._source = 'config';
+    this._totalBeforeFiltering = 0;
 
     // Build initial playlist from config
     this._buildPlaylist();
@@ -93,6 +94,7 @@ class VideoManager {
     }
 
     const playlist = [];
+    let enabledCount = 0;
     for (const row of rows) {
       if (!row.url) continue;
 
@@ -109,6 +111,8 @@ class VideoManager {
       const enabled = String(row.enabled || '').trim().toLowerCase();
       if (!['true', 'yes', '1'].includes(enabled)) continue;
 
+      enabledCount++;
+
       // Day-of-week filter
       if (!isScheduledForToday(row.days)) continue;
 
@@ -124,7 +128,7 @@ class VideoManager {
       });
     }
 
-    return playlist;
+    return { playlist, enabledCount };
   }
 
   /**
@@ -133,15 +137,17 @@ class VideoManager {
    */
   _buildPlaylist() {
     // Try Sheets first
-    const sheetsPlaylist = this._buildPlaylistFromSheets();
-    if (sheetsPlaylist !== null) {
-      this._playlist = sheetsPlaylist;
+    const sheetsResult = this._buildPlaylistFromSheets();
+    if (sheetsResult !== null) {
+      this._playlist = sheetsResult.playlist;
+      this._totalBeforeFiltering = sheetsResult.enabledCount;
       this._source = 'sheets';
     } else {
       // Fall back to config.yaml
       const config = configLoader.getConfig() || {};
       const videos = config.videos || [];
 
+      this._totalBeforeFiltering = videos.filter(e => e.enabled).length;
       this._playlist = [];
       for (const entry of videos) {
         if (!entry.enabled) continue;
@@ -179,14 +185,15 @@ class VideoManager {
    * Check if Sheets playlist has changed and rebuild if needed.
    */
   _checkSheetsUpdate() {
-    const sheetsPlaylist = this._buildPlaylistFromSheets();
-    if (sheetsPlaylist === null) return; // Sheets not available, no action
+    const sheetsResult = this._buildPlaylistFromSheets();
+    if (sheetsResult === null) return; // Sheets not available, no action
 
     const currentIds = this._playlist.map(v => v.videoId).join(',');
-    const newIds = sheetsPlaylist.map(v => v.videoId).join(',');
+    const newIds = sheetsResult.playlist.map(v => v.videoId).join(',');
 
     if (currentIds !== newIds) {
-      this._playlist = sheetsPlaylist;
+      this._playlist = sheetsResult.playlist;
+      this._totalBeforeFiltering = sheetsResult.enabledCount;
       this._source = 'sheets';
       if (this._currentIndex >= this._playlist.length) {
         this._currentIndex = 0;
@@ -214,6 +221,16 @@ class VideoManager {
    */
   getVideoCount() {
     return this._playlist.length;
+  }
+
+  /**
+   * Returns true if the playlist source has videos defined but none are
+   * scheduled for today (day-of-week filtering removed them all).
+   * This is a normal operating state, not a failure.
+   */
+  isFilteredBySchedule() {
+    if (this._playlist.length > 0) return false;
+    return this._totalBeforeFiltering > 0;
   }
 
   /**
