@@ -41,6 +41,11 @@ function onYouTubeIframeAPIReady() {
   var lastAdvanceVersion = 0;
   var lastRefreshVersion = 0;
 
+  // Watchdog state — detects server restarts, stalled rotation, and connection loss
+  var watchdogLastUptime = 0;
+  var watchdogConsecutiveFailures = 0;
+  var lastZoneTransitionTime = Date.now();
+
   // Video state
   var videoPlaylist = [];
   var videoIndex = 0;
@@ -838,6 +843,7 @@ function onYouTubeIframeAPIReady() {
     var toZone = rotationOrder[currentIndex];
 
     console.log('Zone transition: ' + fromZone + ' \u2192 ' + toZone);
+    lastZoneTransitionTime = Date.now();
     showZone(toZone);
     scheduleNext();
 
@@ -1090,6 +1096,53 @@ function onYouTubeIframeAPIReady() {
     // Nothing to pause — iframe stays live in background
   }
 
+  // ─── Watchdog ────────────────────────────────────────────────
+  //
+  // Runs every 30 seconds. Detects three failure modes:
+  // 1. Server restart — uptime dropped below what we last saw → reload
+  // 2. Connection loss — server unreachable for 3+ checks → reload when it returns
+  // 3. Stalled rotation — no zone transition for 10 minutes → reload
+  //
+  var WATCHDOG_INTERVAL = 30000;
+  var WATCHDOG_MAX_FAILURES = 3;
+  var WATCHDOG_STALL_MS = 10 * 60 * 1000; // 10 minutes
+
+  function watchdogCheck() {
+    fetch('/api/health')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var serverUptime = data.uptime || 0;
+
+        // Detect server restart: uptime is lower than last known uptime
+        if (watchdogLastUptime > 0 && serverUptime < watchdogLastUptime) {
+          console.log('Watchdog: server restarted (uptime ' + Math.round(serverUptime) + 's < last ' + Math.round(watchdogLastUptime) + 's) — reloading');
+          window.location.reload();
+          return;
+        }
+        watchdogLastUptime = serverUptime;
+
+        // Connection restored after failures — reload to get a fresh state
+        if (watchdogConsecutiveFailures >= WATCHDOG_MAX_FAILURES) {
+          console.log('Watchdog: server reconnected after ' + watchdogConsecutiveFailures + ' failures — reloading');
+          window.location.reload();
+          return;
+        }
+        watchdogConsecutiveFailures = 0;
+
+        // Detect stalled rotation
+        var sinceLastTransition = Date.now() - lastZoneTransitionTime;
+        if (sinceLastTransition > WATCHDOG_STALL_MS) {
+          console.log('Watchdog: rotation stalled for ' + Math.round(sinceLastTransition / 1000) + 's — reloading');
+          window.location.reload();
+          return;
+        }
+      })
+      .catch(function () {
+        watchdogConsecutiveFailures++;
+        console.log('Watchdog: health check failed (' + watchdogConsecutiveFailures + '/' + WATCHDOG_MAX_FAILURES + ')');
+      });
+  }
+
   /**
    * Initialize: fetch config, show first zone, start rotation.
    */
@@ -1166,6 +1219,8 @@ function onYouTubeIframeAPIReady() {
         setInterval(fetchConfig, 30000);
         // Poll for admin zone advances every 2 seconds
         setInterval(pollZoneState, 2000);
+        // Watchdog: detect server restarts, stalled rotation, connection loss
+        setInterval(watchdogCheck, WATCHDOG_INTERVAL);
       })
       .catch(function (err) {
         console.error('Initial config fetch failed:', err);
@@ -1174,6 +1229,7 @@ function onYouTubeIframeAPIReady() {
         scheduleNext();
         setInterval(fetchConfig, 30000);
         setInterval(pollZoneState, 2000);
+        setInterval(watchdogCheck, WATCHDOG_INTERVAL);
       });
   }
 
