@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-25)
 
 Milestone: v1.5 Live Events
 Phase: 17 of 17 (Live Event Override)
-Plan: 01 complete — LiveEventService + server integration
-Status: Plan 01 done, plan 02 next
-Last activity: 2026-02-26 — Plan 17-01 completed (LiveEventService, ZoneController override, API routes, config)
+Plan: 02 complete — Frontend live event zone + admin status
+Status: Phase 17 complete, v1.5 milestone complete
+Last activity: 2026-02-26 — Plan 17-02 completed (frontend live event zone, admin dashboard card, Sheets Instructions)
 
-Progress: █████░░░░░ 50%
+Progress: ██████████ 100%
 
 ## Deployment Info
 
@@ -110,5 +110,5 @@ None
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Plan 17-01 complete, plan 17-02 next
+Stopped at: Plan 17-02 complete, phase 17 complete, v1.5 milestone complete
 Resume file: None
