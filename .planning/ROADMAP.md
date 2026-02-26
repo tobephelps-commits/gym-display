@@ -15,7 +15,7 @@ None
 - ✅ [v1.2 Go Live](milestones/v1.2-ROADMAP.md) (Phase 11) — SHIPPED 2026-02-24
 - ✅ [v1.3 Resilience](milestones/v1.3-ROADMAP.md) (Phases 12-15) — SHIPPED 2026-02-24
 - ✅ [v1.4 Video Scheduling](milestones/v1.4-ROADMAP.md) (Phase 16) — SHIPPED 2026-02-25
-- 🚧 **v1.5 Live Events** — Phase 17 (in progress)
+- 🚧 **v1.5 Live Events** — Phase 17 (complete, pending milestone close)
 
 ## Phases
 
@@ -81,7 +81,7 @@ See [milestone archive](milestones/v1.4-ROADMAP.md) for full phase details.
 
 </details>
 
-### 🚧 v1.5 Live Events (In Progress)
+### v1.5 Live Events
 
 **Milestone Goal:** Enable full-screen YouTube Live takeover for competition events, controlled via Google Sheets scheduling
 
@@ -90,10 +90,10 @@ See [milestone archive](milestones/v1.4-ROADMAP.md) for full phase details.
 **Goal**: Sheets tab polling for live event scheduling, rotation engine override to show YouTube Live fullscreen, automatic resume when event ends, admin panel event visibility
 **Depends on**: Previous milestone complete
 **Research**: Unlikely (all patterns established — Sheets polling, YouTube iframe, rotation override from v1.4)
-**Plans**: TBD
 
 Plans:
-- [ ] 17-01: TBD (run /gsd:plan-phase 17 to break down)
+- [x] 17-01: LiveEventService + Server Integration (2/2 tasks) — completed 2026-02-26
+- [x] 17-02: Frontend Live Event Zone + Admin Status (2/2 tasks) — completed 2026-02-26
 
 ## Progress
 
@@ -118,4 +118,4 @@ Phases execute in numeric order: 1 → 2 → … → 17
 | 14. Tiered Alert System | v1.3 | 2/2 | Complete | 2026-02-24 |
 | 15. Admin Error Dashboard | v1.3 | 1/1 | Complete | 2026-02-24 |
 | 16. Day-of-Week Video Scheduling | v1.4 | 1/1 | Complete | 2026-02-25 |
-| 17. Live Event Override | v1.5 | 0/? | Not started | - |
+| 17. Live Event Override | v1.5 | 2/2 | Complete | 2026-02-26 |
