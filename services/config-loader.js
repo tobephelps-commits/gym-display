@@ -7,7 +7,7 @@ const EventEmitter = require('events');
 const CONFIG_PATH = path.join(__dirname, '..', 'config.yaml');
 const BACKUP_PATH = CONFIG_PATH + '.bak';
 
-const VALID_ZONE_NAMES = ['wod', 'video', 'roster', 'leaderboard', 'announcements'];
+const VALID_ZONE_NAMES = ['wod', 'video', 'roster', 'leaderboard', 'announcements', 'live-event'];
 
 class ConfigLoader extends EventEmitter {
   constructor() {

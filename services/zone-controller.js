@@ -171,6 +171,14 @@ class ZoneController {
   }
 
   /**
+   * Set live event service reference (late-binding pattern).
+   * @param {object} svc - LiveEventService instance
+   */
+  setLiveEventService(svc) {
+    this._liveEventService = svc;
+  }
+
+  /**
    * Check if video zone is configured for play_full mode.
    */
   _isVideoPlayFull() {
@@ -183,6 +191,26 @@ class ZoneController {
    * Returns current zone state.
    */
   getZoneState() {
+    // Live event override — takes priority over normal rotation
+    if (this._liveEventService && this._liveEventService.isActive()) {
+      const event = this._liveEventService.getActiveEvent();
+      return {
+        currentZone: 'live-event',
+        nextZone: 'live-event',
+        durationMs: 0,
+        rotationOrder: this._rotationOrder,
+        playFull: false,
+        advanceVersion: this._advanceVersion,
+        refreshVersion: this._refreshVersion,
+        liveEvent: {
+          title: event.title,
+          videoId: event.videoId,
+          url: event.url,
+          endsAt: event.end.toISOString()
+        }
+      };
+    }
+
     const currentZone = this._rotationOrder[this._currentIndex];
     const nextIndex = (this._currentIndex + 1) % this._rotationOrder.length;
     const nextZone = this._rotationOrder[nextIndex];

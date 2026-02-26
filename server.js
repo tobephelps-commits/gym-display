@@ -17,6 +17,7 @@ const announcementsService = require('./services/announcements-service');
 const healthMonitor = require('./services/zone-health-monitor');
 const notificationService = require('./services/notification-service');
 const alertManager = require('./services/alert-manager');
+const liveEventService = require('./services/live-event-service').create(sheetsClient, configLoader);
 const { createWodProxy } = require('./services/wod-proxy');
 
 const config = configLoader.getConfig();
@@ -304,6 +305,11 @@ app.get('/api/announcements', (req, res) => {
   res.json(announcementsService.getAnnouncements());
 });
 
+// Live Event API endpoint (public — status is non-sensitive)
+app.get('/api/live-event', (req, res) => {
+  res.json(liveEventService.getStatus());
+});
+
 // ── Admin API Endpoints (protected by auth middleware) ──
 
 // GET /api/admin/status — Aggregate all service statuses
@@ -363,7 +369,8 @@ app.get('/api/admin/status', adminAuthMiddleware, (req, res) => {
       active: announcementsService.isActive(),
       count: announceData.count
     },
-    health: monitor ? monitor.getHealthStatus() : null
+    health: monitor ? monitor.getHealthStatus() : null,
+    liveEvent: liveEventService.getStatus()
   });
 });
 
@@ -445,11 +452,14 @@ app.post('/api/admin/refresh/:service', adminAuthMiddleware, async (req, res) =>
         videoManager.resetPlaylist();
         zoneController.bumpRefreshVersion();
         return res.json({ success: true, service, message: 'Video playlist reset' });
+      case 'live-event':
+        liveEventService._refresh();
+        return res.json({ success: true, service, message: 'Live event data refreshed' });
       case 'health':
         if (monitor) monitor.checkAll();
         return res.json({ success: true, service, message: 'Health check triggered' });
       default:
-        return res.status(400).json({ error: `Unknown service: ${service}`, supported: ['wod', 'sheets', 'videos', 'health'] });
+        return res.status(400).json({ error: `Unknown service: ${service}`, supported: ['wod', 'sheets', 'videos', 'live-event', 'health'] });
     }
   } catch (err) {
     console.error(`[Admin] Refresh ${service} failed: ${err.message}`);
@@ -503,6 +513,15 @@ const server = app.listen(port, bindAddress, () => {
     console.log('[Server] Sheets polling initialized');
   } catch (err) {
     console.error(`[Server] Sheets initialization failed (non-fatal): ${err.message}`);
+  }
+
+  // Start LiveEventService polling and connect to zone controller
+  try {
+    liveEventService.start();
+    zoneController.setLiveEventService(liveEventService);
+    console.log('[Server] LiveEventService started');
+  } catch (err) {
+    console.error(`[Server] LiveEventService initialization failed (non-fatal): ${err.message}`);
   }
 
   // Initialize zone health monitor (after all services are initialized)
@@ -568,6 +587,7 @@ function shutdown(signal) {
   }
 
   // Stop service polling intervals
+  try { liveEventService.stop(); } catch (e) { /* ignore */ }
   try { mindbodyClient.stopPolling(); } catch (e) { /* ignore */ }
   try { sheetsClient.stopPolling(); } catch (e) { /* ignore */ }
 

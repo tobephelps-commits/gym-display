@@ -85,6 +85,12 @@ sheets:
   credentials_file: "/home/BigBarn/secrets/google-credentials.json"
   poll_interval_minutes: 5
 
+# Live Events (via Google Sheets "LiveEvent" tab)
+# Columns: Title, URL (YouTube Live), Start (YYYY-MM-DD HH:MM), End (YYYY-MM-DD HH:MM), Enabled (TRUE/FALSE)
+# When an enabled event's time window includes now, rotation is overridden with fullscreen YouTube Live
+# Multiple events can be scheduled; first matching active event wins
+# Times are interpreted in the system.timezone setting
+
 # System
 system:
   port: 3000
