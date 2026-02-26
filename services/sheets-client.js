@@ -249,6 +249,15 @@ class SheetsClient {
       await sheet.updateDimensionProperties('COLUMNS', { pixelSize: 700 }, { startIndex: 1, endIndex: 2 });
 
       console.log('[Sheets] Instructions tab created/updated');
+
+      // Create LiveEvent tab with headers if it doesn't exist
+      if (!doc.sheetsByTitle['LiveEvent']) {
+        const liveSheet = await doc.addSheet({
+          title: 'LiveEvent',
+          headerValues: ['Title', 'URL', 'Start', 'End', 'Enabled']
+        });
+        console.log('[Sheets] LiveEvent tab created with headers');
+      }
     } catch (err) {
       console.warn(`[Sheets] Failed to write Instructions tab: ${err.message}`);
     }
