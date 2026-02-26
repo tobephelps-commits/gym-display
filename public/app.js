@@ -42,6 +42,8 @@ function onYouTubeIframeAPIReady() {
   var liveEventPlayer = null;
   var liveEventVideoId = null;
   var liveEventOverlayTimer = null;
+  var liveEventEndsAt = null; // ISO string from server — client-side safety fallback
+  var liveEventPollFailures = 0; // track consecutive poll failures during live event
 
   // Admin advance/refresh tracking
   var lastAdvanceVersion = 0;
@@ -806,6 +808,8 @@ function onYouTubeIframeAPIReady() {
    */
   function enterLiveEventMode(event) {
     liveEventActive = true;
+    liveEventEndsAt = event.endsAt || null;
+    liveEventPollFailures = 0;
 
     // Stop normal rotation timer
     if (rotationTimer) {
@@ -881,6 +885,8 @@ function onYouTubeIframeAPIReady() {
   function exitLiveEventMode() {
     console.log('Live event mode EXITED — resuming rotation');
     liveEventActive = false;
+    liveEventEndsAt = null;
+    liveEventPollFailures = 0;
 
     destroyLiveEventPlayer();
     liveEventVideoId = null;
@@ -1008,6 +1014,9 @@ function onYouTubeIframeAPIReady() {
     fetch('/api/zones')
       .then(function(res) { return res.json(); })
       .then(function(state) {
+        // Reset poll failure counter on success
+        liveEventPollFailures = 0;
+
         // Live event detection — overrides normal rotation
         if (state.currentZone === 'live-event' && state.liveEvent) {
           if (!liveEventActive) {
@@ -1039,7 +1048,25 @@ function onYouTubeIframeAPIReady() {
           scheduleNext();
         }
       })
-      .catch(function() {});
+      .catch(function() {
+        // If we're in live event mode and polls are failing, check client-side end time
+        if (liveEventActive) {
+          liveEventPollFailures++;
+          if (liveEventEndsAt) {
+            var endsAt = new Date(liveEventEndsAt);
+            if (Date.now() >= endsAt.getTime()) {
+              console.log('Live event poll failed but end time reached — exiting live event mode');
+              exitLiveEventMode();
+              return;
+            }
+          }
+          // After 30 consecutive failures (60s at 2s intervals), force exit
+          if (liveEventPollFailures >= 30) {
+            console.log('Live event poll failed 30 times — force exiting live event mode');
+            exitLiveEventMode();
+          }
+        }
+      });
   }
 
   /**

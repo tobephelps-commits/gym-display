@@ -27,13 +27,18 @@ if [ $retries -eq $MAX_RETRIES ]; then
   exit 1
 fi
 
-# Fix Chromium crash recovery nag
+# Fix Chromium crash recovery nag and clear stale caches
 fix_crash_prefs() {
   PREFS="$HOME/.config/chromium/Default/Preferences"
   if [ -f "$PREFS" ]; then
     sed -i 's/"exited_cleanly":false/"exited_cleanly":true/' "$PREFS"
     sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' "$PREFS"
   fi
+  # Clear caches that can cause grey screen after network service crash
+  rm -rf "$HOME/.config/chromium/Default/Service Worker" 2>/dev/null
+  rm -rf "$HOME/.config/chromium/Default/Cache" 2>/dev/null
+  rm -rf "$HOME/.config/chromium/Default/Code Cache" 2>/dev/null
+  rm -rf "$HOME/.config/chromium/Default/GPUCache" 2>/dev/null
 }
 
 # Restart loop — if Chromium exits (crash, OOM, etc.), relaunch it

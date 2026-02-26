@@ -104,6 +104,13 @@ class LiveEventService {
 
       // Find first event where now >= start && now < end
       const active = events.find(e => now >= e.start && now < e.end);
+      const wasActive = !!this._activeEvent;
+      const isNowActive = !!active;
+      if (!wasActive && isNowActive) {
+        console.log(`[LiveEvent] Event ACTIVATED: "${active.title}" (ends ${active.end.toISOString()})`);
+      } else if (wasActive && !isNowActive) {
+        console.log(`[LiveEvent] Event ENDED: "${this._activeEvent.title}"`);
+      }
       this._activeEvent = active || null;
       this._lastRefresh = new Date().toISOString();
     } catch (err) {
