@@ -1,5 +1,33 @@
 # Project Milestones: Gym Display System
 
+## v1.5 Live Events (Shipped: 2026-02-26)
+
+**Delivered:** Full-screen YouTube Live takeover for competition events, controlled via Google Sheets scheduling with automatic rotation resume when events end.
+
+**Phases completed:** 17 (2 plans total)
+
+**Key accomplishments:**
+
+- LiveEventService polling Sheets "LiveEvent" tab every 60s with timezone-aware event detection
+- ZoneController override pauses rotation and shows fullscreen YouTube Live when event active
+- Frontend live-event zone with title overlay (auto-fade), automatic rotation resume on event end
+- Admin dashboard Live Event card with LIVE NOW / Scheduled / No Event badge states
+- Sheets Instructions updated with LiveEvent tab documentation for coaches
+- Auto-creates LiveEvent tab with column headers on first run
+
+**Stats:**
+
+- 11 files created/modified (+535 lines)
+- ~6,668 lines of code total
+- 1 phase, 2 plans, 4 tasks
+- 1 day (Feb 26, 2026)
+
+**Git range:** `06b1c3c` → `6089bcf`
+
+**What's next:** MindBody API key activation, configure Pushover/Gmail credentials.
+
+---
+
 ## v1.4 Video Scheduling (Shipped: 2026-02-25)
 
 **Delivered:** Day-of-week video scheduling via Google Sheets, video focus mode, frontend watchdog for automatic display recovery, and operational polish (alert suppression, clean restarts, Sheets instructions for coaches).

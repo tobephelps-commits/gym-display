@@ -43,6 +43,9 @@ The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cyc
 - ✓ Frontend watchdog for automatic display recovery (blank/stuck screen detection) — v1.4
 - ✓ Per-zone alert suppression via suppressed_zones config — v1.4
 - ✓ Sheets Instructions tab in admin panel for coach onboarding — v1.4
+- ✓ YouTube Live fullscreen takeover via Sheets "LiveEvent" tab scheduling — v1.5
+- ✓ Admin dashboard live event status with LIVE NOW / Scheduled / No Event badges — v1.5
+- ✓ Auto-created LiveEvent tab with column headers in Google Sheets — v1.5
 
 ### Active
 
@@ -58,12 +61,13 @@ The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cyc
 
 ## Context
 
-Shipped v1.4 with ~8,599 LOC across services, server, and frontend.
+Shipped v1.5 with ~6,668 LOC across services, server, and frontend.
 Tech stack: Node.js + Express backend, vanilla HTML/CSS/JS frontend, Puppeteer for WodScreen, YouTube IFrame API, yt-dlp for Instagram Reels, Google Sheets API v4 for data hub, MindBody Public API v6 for roster, pushover-notifications + nodemailer for alerts.
-Five rotation zones: WOD, video, roster, leaderboard, announcements.
+Five rotation zones: WOD, video, roster, leaderboard, announcements — plus live-event override zone.
 Web admin panel at /admin with Dashboard, Settings, Health, and Sheets Instructions tabs.
 Day-of-week video scheduling via Google Sheets "Days" column with timezone-aware filtering.
 Video focus mode for fullscreen playback from admin panel.
+YouTube Live fullscreen takeover for competition events via Sheets "LiveEvent" tab scheduling with automatic rotation resume.
 Zone health monitoring with graceful degradation (unhealthy zones auto-skipped).
 Tiered alert system: Pushover for critical, Gmail for warnings, with dedup/cooldowns/flapping detection. Per-zone suppression available.
 Frontend watchdog for automatic display recovery (blank/stuck screen detection).
@@ -122,6 +126,11 @@ Known issues:
 | en-US short weekday format | Mon/Tue/Wed/Thu/Fri/Sat/Sun matches toLocaleDateString output; consistent and familiar | Good |
 | Frontend watchdog | Detects blank/stuck screens and triggers automatic recovery; prevents silent failures | Good |
 | Per-zone alert suppression | suppressed_zones config silences known issues (e.g., MindBody) without disabling all alerts | Good |
+| LiveEventService polls every 60s | Matches announcement polling; fast enough for scheduled events without excessive API calls | Good |
+| Intl.DateTimeFormat for timezone parsing | Iterative offset correction handles "YYYY-MM-DD HH:MM" in configured timezone without external libs | Good |
+| No auto-advance for live events | `durationMs: 0` keeps display on live stream; server controls event window, not player state | Good |
+| First-match wins for overlapping events | Top row in Sheets takes priority; simple, predictable behavior for coaches | Good |
+| Auto-create LiveEvent tab | Tab with headers created on first poll; coaches don't need to set up manually | Good |
 
 ---
-*Last updated: 2026-02-25 after v1.4 milestone*
+*Last updated: 2026-02-26 after v1.5 milestone*

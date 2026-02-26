@@ -15,7 +15,7 @@ None
 - ✅ [v1.2 Go Live](milestones/v1.2-ROADMAP.md) (Phase 11) — SHIPPED 2026-02-24
 - ✅ [v1.3 Resilience](milestones/v1.3-ROADMAP.md) (Phases 12-15) — SHIPPED 2026-02-24
 - ✅ [v1.4 Video Scheduling](milestones/v1.4-ROADMAP.md) (Phase 16) — SHIPPED 2026-02-25
-- 🚧 **v1.5 Live Events** — Phase 17 (complete, pending milestone close)
+- ✅ [v1.5 Live Events](milestones/v1.5-ROADMAP.md) (Phase 17) — SHIPPED 2026-02-26
 
 ## Phases
 
@@ -81,19 +81,14 @@ See [milestone archive](milestones/v1.4-ROADMAP.md) for full phase details.
 
 </details>
 
-### v1.5 Live Events
+<details>
+<summary>v1.5 Live Events (Phase 17) — SHIPPED 2026-02-26</summary>
 
-**Milestone Goal:** Enable full-screen YouTube Live takeover for competition events, controlled via Google Sheets scheduling
+- [x] Phase 17: Live Event Override (2/2 plans) — completed 2026-02-26
 
-#### Phase 17: Live Event Override
+See [milestone archive](milestones/v1.5-ROADMAP.md) for full phase details.
 
-**Goal**: Sheets tab polling for live event scheduling, rotation engine override to show YouTube Live fullscreen, automatic resume when event ends, admin panel event visibility
-**Depends on**: Previous milestone complete
-**Research**: Unlikely (all patterns established — Sheets polling, YouTube iframe, rotation override from v1.4)
-
-Plans:
-- [x] 17-01: LiveEventService + Server Integration (2/2 tasks) — completed 2026-02-26
-- [x] 17-02: Frontend Live Event Zone + Admin Status (2/2 tasks) — completed 2026-02-26
+</details>
 
 ## Progress
 
