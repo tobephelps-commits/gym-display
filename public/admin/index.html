@@ -124,6 +124,21 @@
             <div>Count: <span id="ann-count">0</span></div>
           </div>
         </div>
+
+        <!-- Live Event -->
+        <div class="card service-card" id="live-event-card">
+          <div class="card-title">Live Event</div>
+          <div id="live-event-status">
+            <span id="live-event-badge" class="badge none">No Event</span>
+            <div id="live-event-details" class="hidden" style="margin-top: 8px;">
+              <div><strong>Title:</strong> <span id="live-event-title-admin"></span></div>
+              <div><strong>Ends at:</strong> <span id="live-event-ends"></span></div>
+            </div>
+          </div>
+          <div class="service-actions">
+            <button class="btn btn-secondary btn-sm" onclick="Dashboard.refreshService('live-event')">Refresh Live Event</button>
+          </div>
+        </div>
       </div>
 
       <!-- System Info -->
@@ -570,6 +585,27 @@
       setDot('ann-dot', data.announcements.active ? 'ok' : 'error');
       setText('ann-active', yn(data.announcements.active));
       setText('ann-count', data.announcements.count || 0);
+
+      // Live Event status
+      if (data.liveEvent) {
+        var badge = document.getElementById('live-event-badge');
+        var details = document.getElementById('live-event-details');
+        if (data.liveEvent.active && data.liveEvent.event) {
+          badge.textContent = 'LIVE NOW';
+          badge.className = 'badge live';
+          document.getElementById('live-event-title-admin').textContent = data.liveEvent.event.title || 'Live Event';
+          document.getElementById('live-event-ends').textContent = new Date(data.liveEvent.event.end).toLocaleTimeString();
+          details.classList.remove('hidden');
+        } else if (data.liveEvent.eventCount > 0) {
+          badge.textContent = 'Scheduled';
+          badge.className = 'badge scheduled';
+          details.classList.add('hidden');
+        } else {
+          badge.textContent = 'No Event';
+          badge.className = 'badge none';
+          details.classList.add('hidden');
+        }
+      }
     }
 
     // ── Update System Info ──

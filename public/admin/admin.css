@@ -817,3 +817,17 @@ input[readonly] {
   font-weight: 600;
   color: #eee;
 }
+
+/* ── Live Event Badge ── */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+#live-event-badge.live { background: #e53e3e; color: white; animation: pulse 2s infinite; }
+#live-event-badge.scheduled { background: #ecc94b; color: #1a202c; }
+#live-event-badge.none { background: #718096; color: white; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
