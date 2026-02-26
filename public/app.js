@@ -37,6 +37,12 @@ function onYouTubeIframeAPIReady() {
   var announcementsLastData = null;
   var announcementsConfigured = false;
 
+  // Live event state
+  var liveEventActive = false;
+  var liveEventPlayer = null;
+  var liveEventVideoId = null;
+  var liveEventOverlayTimer = null;
+
   // Admin advance/refresh tracking
   var lastAdvanceVersion = 0;
   var lastRefreshVersion = 0;
@@ -779,6 +785,122 @@ function onYouTubeIframeAPIReady() {
     }
   }
 
+  // ─── Live Event Override ─────────────────────────────────────
+
+  /**
+   * Destroy the live event YouTube player and clean up the container.
+   */
+  function destroyLiveEventPlayer() {
+    if (liveEventPlayer) {
+      try { liveEventPlayer.destroy(); } catch (e) {}
+      liveEventPlayer = null;
+    }
+    var container = document.getElementById('live-yt-container');
+    if (container) {
+      container.innerHTML = '';
+    }
+  }
+
+  /**
+   * Enter live event mode — show fullscreen YouTube Live, pause rotation.
+   */
+  function enterLiveEventMode(event) {
+    liveEventActive = true;
+
+    // Stop normal rotation timer
+    if (rotationTimer) {
+      clearTimeout(rotationTimer);
+      rotationTimer = null;
+    }
+
+    // Hide all existing zones
+    document.querySelectorAll('.zone').forEach(function (z) { z.classList.remove('active'); });
+
+    // Show live event zone
+    var liveZone = document.getElementById('zone-live-event');
+    if (liveZone) {
+      liveZone.classList.add('active');
+    }
+
+    // Deactivate whatever was playing before
+    var activeZoneName = rotationOrder[currentIndex];
+    if (activeZoneName === 'video') onVideoZoneInactive();
+    if (activeZoneName === 'roster') onRosterZoneInactive();
+    if (activeZoneName === 'leaderboard') onLeaderboardZoneInactive();
+    if (activeZoneName === 'announcements') onAnnouncementsZoneInactive();
+
+    // Set title overlay
+    var titleEl = document.getElementById('live-event-title');
+    if (titleEl) {
+      titleEl.textContent = event.title || 'Live Event';
+    }
+
+    // Show overlay then fade out after 10 seconds
+    var overlay = document.getElementById('live-event-overlay');
+    if (overlay) {
+      overlay.classList.remove('fade-out');
+      if (liveEventOverlayTimer) clearTimeout(liveEventOverlayTimer);
+      liveEventOverlayTimer = setTimeout(function () {
+        overlay.classList.add('fade-out');
+      }, 10000);
+    }
+
+    // Create YouTube player if video changed
+    if (event.videoId !== liveEventVideoId) {
+      destroyLiveEventPlayer();
+      liveEventVideoId = event.videoId;
+
+      if (window._youtubeAPIReady && event.videoId) {
+        var playerDiv = document.createElement('div');
+        playerDiv.id = 'live-yt-player';
+        document.getElementById('live-yt-container').appendChild(playerDiv);
+
+        liveEventPlayer = new YT.Player('live-yt-player', {
+          width: '100%',
+          height: '100%',
+          videoId: event.videoId,
+          playerVars: {
+            autoplay: 1, controls: 0, modestbranding: 1, rel: 0,
+            fs: 0, iv_load_policy: 3, disablekb: 1, playsinline: 1, enablejsapi: 1
+          },
+          events: {
+            onReady: function (e) { e.target.setVolume(80); }
+            // NO onStateChange ENDED handler — live streams don't end via player state
+            // Override ends when server says event time window is over
+          }
+        });
+      }
+    }
+
+    console.log('Live event mode ENTERED: ' + (event.title || 'unknown'));
+  }
+
+  /**
+   * Exit live event mode — resume normal rotation.
+   */
+  function exitLiveEventMode() {
+    console.log('Live event mode EXITED — resuming rotation');
+    liveEventActive = false;
+
+    destroyLiveEventPlayer();
+    liveEventVideoId = null;
+
+    if (liveEventOverlayTimer) {
+      clearTimeout(liveEventOverlayTimer);
+      liveEventOverlayTimer = null;
+    }
+
+    // Hide live event zone
+    var liveZone = document.getElementById('zone-live-event');
+    if (liveZone) {
+      liveZone.classList.remove('active');
+    }
+
+    // Resume normal rotation from current position
+    showZone(rotationOrder[currentIndex]);
+    scheduleNext();
+  }
+
   /**
    * Show a zone by name, triggering CSS crossfade transition.
    */
@@ -802,6 +924,7 @@ function onYouTubeIframeAPIReady() {
       if (previousZone === 'roster') onRosterZoneInactive();
       if (previousZone === 'leaderboard') onLeaderboardZoneInactive();
       if (previousZone === 'announcements') onAnnouncementsZoneInactive();
+      if (previousZone === 'live-event') { destroyLiveEventPlayer(); liveEventVideoId = null; }
     }
 
     // Activate new zone
@@ -817,6 +940,8 @@ function onYouTubeIframeAPIReady() {
    * Also syncs server-side zone controller to stay in lock-step.
    */
   function advanceZone() {
+    if (liveEventActive) return; // Don't advance during live event override
+
     var fromZone = rotationOrder[currentIndex];
     var skipped = 0;
     var nextIndex = (currentIndex + 1) % rotationOrder.length;
@@ -883,6 +1008,16 @@ function onYouTubeIframeAPIReady() {
     fetch('/api/zones')
       .then(function(res) { return res.json(); })
       .then(function(state) {
+        // Live event detection — overrides normal rotation
+        if (state.currentZone === 'live-event' && state.liveEvent) {
+          if (!liveEventActive) {
+            enterLiveEventMode(state.liveEvent);
+          }
+          return; // Don't process advance/refresh while in live event mode
+        } else if (liveEventActive) {
+          exitLiveEventMode();
+        }
+
         if (state.advanceVersion && state.advanceVersion > lastAdvanceVersion) {
           lastAdvanceVersion = state.advanceVersion;
           // Admin advanced — jump to server's current zone
