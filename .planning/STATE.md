@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** Planning next milestone
+**Current focus:** v1.5 Live Events — YouTube Live takeover for competition events
 
 ## Current Position
 
-Milestone: v1.4 Video Scheduling — SHIPPED 2026-02-25
-Phase: All phases complete (16 total across v1.0–v1.4)
-Plan: N/A
-Status: Ready to plan next milestone
-Last activity: 2026-02-25 — v1.4 milestone complete
+Milestone: v1.5 Live Events
+Phase: 17 of 17 (Live Event Override)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-02-26 — Milestone v1.5 created
 
-Progress: v1.0–v1.4 shipped
+Progress: ░░░░░░░░░░ 0%
 
 ## Deployment Info
 
@@ -105,9 +105,10 @@ None
 - v1.2 Go Live shipped: Production deployment, reliability improvements, 1 phase (Phase 11)
 - v1.3 Resilience shipped: Zone health monitoring, graceful degradation, alerting, admin dashboard, 4 phases (Phase 12-15)
 - v1.4 Video Scheduling shipped: Day-of-week scheduling, video focus mode, frontend watchdog, operational polish, 1 phase (Phase 16)
+- Milestone v1.5 created: Live event override, 1 phase (Phase 17)
 
 ## Session Continuity
 
-Last session: 2026-02-25
-Stopped at: v1.4 milestone completed and archived
-Resume file: .planning/ROADMAP.md
+Last session: 2026-02-26
+Stopped at: Milestone v1.5 initialization
+Resume file: None
