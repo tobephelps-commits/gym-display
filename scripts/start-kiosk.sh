@@ -77,7 +77,10 @@ run_watchdog() {
     # Best proxy: if we can curl the server fine but Chromium has been
     # running for over WATCHDOG_GRACE_PERIOD without any zone advances
     # in the server logs, the display is stuck.
-    local recent_advances=$(journalctl -u gym-display --since "${WATCHDOG_INTERVAL} seconds ago" --no-pager 2>/dev/null | grep -c "Zone advanced" || echo "0")
+    local recent_advances
+    recent_advances=$(journalctl -u gym-display --since "${WATCHDOG_INTERVAL} seconds ago" --no-pager 2>/dev/null | grep -c "Zone advanced" 2>/dev/null) || true
+    recent_advances="${recent_advances%%[^0-9]*}"
+    recent_advances="${recent_advances:-0}"
 
     if [ "$recent_advances" -eq 0 ]; then
       echo "[Kiosk] Watchdog: no zone advances in last ${WATCHDOG_INTERVAL}s — Chromium may be stuck"
@@ -86,7 +89,9 @@ run_watchdog() {
       if ! kill -0 "$chromium_pid" 2>/dev/null; then
         break
       fi
-      recent_advances=$(journalctl -u gym-display --since "${WATCHDOG_INTERVAL} seconds ago" --no-pager 2>/dev/null | grep -c "Zone advanced" || echo "0")
+      recent_advances=$(journalctl -u gym-display --since "${WATCHDOG_INTERVAL} seconds ago" --no-pager 2>/dev/null | grep -c "Zone advanced" 2>/dev/null) || true
+      recent_advances="${recent_advances%%[^0-9]*}"
+      recent_advances="${recent_advances:-0}"
       if [ "$recent_advances" -eq 0 ]; then
         echo "[Kiosk] Watchdog: still no zone advances — killing Chromium (pid $chromium_pid)"
         kill "$chromium_pid" 2>/dev/null
