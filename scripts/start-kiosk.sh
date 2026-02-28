@@ -105,6 +105,41 @@ run_watchdog() {
   done
 }
 
+# Pre-flight launch: Chromium 144 on Pi 5/Wayland crashes its network service on
+# the first launch after every reboot. The second launch always works. We absorb
+# this crash by launching briefly to about:blank, waiting for the crash to occur,
+# then killing and purging caches before the real launch.
+preflight_chromium() {
+  echo "[Kiosk] Pre-flight: launching Chromium to absorb first-boot network service crash..."
+  fix_crash_prefs
+
+  chromium-browser \
+    --ozone-platform=wayland \
+    --noerrdialogs \
+    --disable-infobars \
+    --incognito \
+    --disable-features=TranslateUI,NetworkServiceInProcess2 \
+    --enable-features=NetworkServiceInProcess \
+    --password-store=basic \
+    --disable-gpu-compositing \
+    about:blank &
+
+  local preflight_pid=$!
+  # Wait long enough for the network service crash to happen (~36s observed)
+  sleep 15
+  kill "$preflight_pid" 2>/dev/null
+  sleep 2
+  kill -9 "$preflight_pid" 2>/dev/null
+  wait "$preflight_pid" 2>/dev/null
+  pkill -9 -f "chromium.*about:blank" 2>/dev/null
+  sleep 1
+
+  fix_crash_prefs
+  echo "[Kiosk] Pre-flight complete — caches purged, ready for real launch"
+}
+
+preflight_chromium
+
 # Restart loop — if Chromium exits (crash, OOM, watchdog kill, etc.), relaunch it
 while true; do
   fix_crash_prefs
