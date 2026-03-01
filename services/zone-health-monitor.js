@@ -185,17 +185,38 @@ class ZoneHealthMonitor {
   }
 
   /**
+   * Check if today is a WOD rest day (e.g. Sunday).
+   * Reads wodscreen.rest_days from config (array of day names, e.g. ["Sunday"]).
+   */
+  _isWodRestDay() {
+    const config = this._configLoader ? this._configLoader.getConfig() : {};
+    const restDays = (config.wodscreen && config.wodscreen.rest_days) || [];
+    if (restDays.length === 0) return false;
+    const tz = (config.system && config.system.timezone) || 'America/Denver';
+    const dayName = new Date().toLocaleDateString('en-US', { weekday: 'long', timeZone: tz });
+    return restDays.some(function(d) { return d.toLowerCase() === dayName.toLowerCase(); });
+  }
+
+  /**
    * Check WOD zone health.
    * Healthy if status !== 'error' OR hasCookies === true.
    * Degraded if status is 'error' but cookies exist (stale but recoverable).
    * Unhealthy if status is 'error' AND no cookies AND last success > staleness_minutes ago.
+   * On rest days (configured via wodscreen.rest_days), WOD errors are capped at DEGRADED.
    */
   _checkWod() {
     try {
       const wodStatus = this._wodScraper.getStatus();
+      const restDay = this._isWodRestDay();
 
       if (wodStatus.status !== 'error') {
         this._updateZone('wod', STATUS.HEALTHY);
+        return;
+      }
+
+      // On rest days, WOD errors are expected — cap at DEGRADED to avoid CRITICAL alerts
+      if (restDay) {
+        this._updateZone('wod', STATUS.DEGRADED, 'WOD error on rest day (expected, no workout programmed)');
         return;
       }
 

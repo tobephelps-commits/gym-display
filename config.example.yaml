@@ -9,6 +9,7 @@ wodscreen:
   password: "your_password"
   refresh_interval_minutes: 30
   screenshot_selector: "#workout-display"
+  rest_days: ["Sunday"]  # Days with no WOD — suppresses CRITICAL alerts
 
 # Display Zone Rotation
 zones:

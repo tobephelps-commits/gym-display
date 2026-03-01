@@ -265,6 +265,12 @@ class WodScraper {
       // Clear screenshot so frontend doesn't display the auth/error page
       this.lastScreenshot = null;
       this.lastScreenshotTime = null;
+      // Detached frame = browser is dead, force relaunch on next retry
+      if (err.message.includes('detached') || err.message.includes('Target closed') ||
+          err.message.includes('Session closed') || err.message.includes('Protocol error')) {
+        console.log('[WodScraper] Browser frame is dead — will relaunch on next retry');
+        this.page = null;
+      }
     }
   }
 
@@ -434,7 +440,11 @@ class WodScraper {
             await this.login();
           }
         } else if (this.status === 'error' || this.status === 'no-credentials') {
-          // Retry login periodically if in error state
+          // Retry login periodically if in error state — relaunch browser if page is dead
+          if (!this.page || this.page.isClosed()) {
+            console.log('[WodScraper] Browser page is dead — relaunching browser');
+            await this._relaunchBrowser();
+          }
           console.log(`[WodScraper] Status is "${this.status}" — attempting login`);
           await this.login();
         }
@@ -552,6 +562,20 @@ class WodScraper {
       cookieCount: this.cookies ? this.cookies.length : 0,
       hasCookies: !!(this.cookies && this.cookies.length > 0),
     };
+  }
+
+  /**
+   * Relaunch the browser after a fatal error (detached frame, crash, etc.).
+   */
+  async _relaunchBrowser() {
+    try {
+      if (this.browser) {
+        await this.browser.close().catch(() => {});
+      }
+    } catch (_) { /* ignore */ }
+    this.browser = null;
+    this.page = null;
+    await this.launch();
   }
 
   /**
