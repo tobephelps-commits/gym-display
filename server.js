@@ -477,16 +477,27 @@ const bindAddress = '0.0.0.0';
 const server = app.listen(port, bindAddress, () => {
   console.log(`Gym Display server running on ${bindAddress}:${port} (${process.env.NODE_ENV || 'development'})`);
 
-  // Initialize WodScraper — best-effort, server runs even if this fails
+  // Initialize WodScraper — retry on failure (browser may not be ready at boot)
   (async () => {
-    try {
-      console.log('[Server] Initializing WodScraper...');
-      await wodScraper.launch();
-      await wodScraper.login();
-      wodScraper.startSessionLoop();
-      console.log('[Server] WodScraper initialized successfully');
-    } catch (err) {
-      console.error(`[Server] WodScraper initialization failed (non-fatal): ${err.message}`);
+    var maxRetries = 5;
+    var retryDelay = 15000; // 15s between retries
+    for (var attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log('[Server] Initializing WodScraper' + (attempt > 1 ? ' (attempt ' + attempt + '/' + maxRetries + ')' : '') + '...');
+        await wodScraper.launch();
+        await wodScraper.login();
+        wodScraper.startSessionLoop();
+        console.log('[Server] WodScraper initialized successfully');
+        break;
+      } catch (err) {
+        console.error('[Server] WodScraper initialization failed: ' + err.message);
+        if (attempt < maxRetries) {
+          console.log('[Server] Retrying WodScraper in ' + (retryDelay / 1000) + 's...');
+          await new Promise(function(r) { setTimeout(r, retryDelay); });
+        } else {
+          console.error('[Server] WodScraper failed after ' + maxRetries + ' attempts (non-fatal)');
+        }
+      }
     }
   })();
 
