@@ -11,7 +11,9 @@ MAX_RETRIES=30
 RETRY_INTERVAL=2
 RESTART_DELAY=5
 # Watchdog: kill Chromium if server is reachable but no zone advances for this long
-WATCHDOG_INTERVAL=60
+# Interval must exceed the longest video play time (~5min with play_full: true).
+# Total dead-time before kill = WATCHDOG_INTERVAL * 2 (check + double-check).
+WATCHDOG_INTERVAL=300
 WATCHDOG_GRACE_PERIOD=120  # seconds after launch before watchdog starts checking
 
 # Wait for the Node.js server to be ready
