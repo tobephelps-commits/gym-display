@@ -90,6 +90,44 @@ const INSTRUCTIONS_CONTENT = [
   ['Column names', 'Column names are case-sensitive and must be in row 1. Use lowercase for Playlist (url, title, enabled, days, focus). Use title case for Leaderboard (Name, Team, Points, Title) and Announcements (Title, Body, Active, Priority).'],
   ['Fallbacks', 'If Sheets is not configured or a tab is missing, BigBarn falls back to config.yaml for videos and leaderboard title. Announcements have no fallback.'],
   ['Admin panel', 'The admin panel at http://<your-ip>:3000/admin shows live status and lets you trigger an immediate Sheets sync.'],
+  ['', ''],
+  // ── Timing ──
+  ['═══ TIMING TAB ═══', ''],
+  ['Controls how long each zone displays and how often services poll for updates.', ''],
+  ['Edit the Value column to change timing. Changes take effect on the next Sheets poll (up to 5 minutes).', ''],
+  ['', ''],
+  ['Column', 'Description'],
+  ['Setting', 'The timing parameter name. Do not edit — these must match exactly.'],
+  ['Value', 'The numeric value to use. Edit this column to change timing.'],
+  ['Unit', 'The unit of measurement (seconds or minutes). Do not edit.'],
+  ['Description', 'What this setting controls. Do not edit.'],
+  ['', ''],
+  ['Zone Display Durations:', ''],
+  ['  wod_duration', 'How long the WOD (Workout of the Day) zone displays before rotating. Default: 120 seconds.'],
+  ['  video_fallback', 'Maximum time for a video if play_full is on, or exact duration if off. Default: 180 seconds.'],
+  ['  roster_duration', 'How long the class roster zone displays. Default: 60 seconds.'],
+  ['  leaderboard_duration', 'How long the leaderboard zone displays. Default: 90 seconds.'],
+  ['  announcements_duration', 'How long the announcements zone displays. Default: 60 seconds.'],
+  ['', ''],
+  ['Roster Boost (near class time):', ''],
+  ['  boost_before_class', 'Minutes before a class starts to activate roster boost. Default: 15 minutes.'],
+  ['  boost_frequency', 'How often roster appears during boost (2 = every other zone). Default: 2.'],
+  ['', ''],
+  ['Service Polling:', ''],
+  ['  sheets_poll_interval', 'How often to check this spreadsheet for changes. Default: 5 minutes.'],
+  ['  mindbody_poll_interval', 'How often to check MindBody for class schedule updates. Default: 5 minutes.'],
+  ['  wod_refresh_interval', 'How often to re-capture the WOD screenshot. Default: 30 minutes.'],
+  ['  instagram_fetch_interval', 'How often to check for new Instagram reels. Default: 60 minutes.'],
+  ['  instagram_min_display', 'Minimum time to show an Instagram reel. Default: 30 seconds.'],
+  ['', ''],
+  ['System Schedule:', ''],
+  ['  screen_off_hour', 'Hour (24h format) to turn off the TV via HDMI-CEC. Default: 21 (9 PM).'],
+  ['  screen_on_hour', 'Hour (24h format) to turn on the TV. Supports HH:MM format. Default: 04:30.'],
+  ['', ''],
+  ['Notes:', ''],
+  ['  • Only edit the Value column. Changes to Setting or Unit columns may break the system.', ''],
+  ['  • Values must be positive numbers. Invalid values are ignored (previous value kept).', ''],
+  ['  • The Timing tab is created with current values from config.yaml. Sheet values override config.yaml.', ''],
 ];
 
 class SheetsClient {
@@ -159,6 +197,9 @@ class SheetsClient {
       this.cachedData = newData;
       this.lastPoll = Date.now();
       console.log(`[Sheets] Poll complete: ${Object.keys(newData).length} tab(s) — ${Object.keys(newData).join(', ')}`);
+
+      // Apply timing overrides from the Timing tab (if present)
+      this._applyTimingFromSheet();
     } catch (err) {
       console.warn(`[Sheets] Poll failed (keeping stale cache): ${err.message}`);
     }
@@ -250,6 +291,9 @@ class SheetsClient {
 
       console.log('[Sheets] Instructions tab created/updated');
 
+      // Create/update Timing tab with current config values
+      await this._writeTimingTab(doc);
+
       // Create LiveEvent tab with headers if it doesn't exist
       if (!doc.sheetsByTitle['LiveEvent']) {
         const liveSheet = await doc.addSheet({
@@ -260,6 +304,243 @@ class SheetsClient {
       }
     } catch (err) {
       console.warn(`[Sheets] Failed to write Instructions tab: ${err.message}`);
+    }
+  }
+
+  /**
+   * Build the timing rows from current config values.
+   */
+  _getTimingRows() {
+    const config = configLoader.getConfig() || {};
+    const zones = config.zones || {};
+    const mb = config.mindbody || {};
+    const sheets = config.sheets || {};
+    const wod = config.wodscreen || {};
+    const ig = config.instagram || {};
+    const sys = config.system || {};
+
+    return [
+      ['Setting', 'Value', 'Unit', 'Description'],
+      ['wod_duration', (zones.wod && zones.wod.duration_seconds) || 120, 'seconds', 'How long the WOD zone displays'],
+      ['video_fallback', (zones.video && zones.video.fallback_seconds) || 180, 'seconds', 'Video zone max/fallback duration'],
+      ['roster_duration', (zones.roster && zones.roster.duration_seconds) || 60, 'seconds', 'How long the roster zone displays'],
+      ['leaderboard_duration', (zones.leaderboard && zones.leaderboard.duration_seconds) || 90, 'seconds', 'How long the leaderboard zone displays'],
+      ['announcements_duration', (zones.announcements && zones.announcements.duration_seconds) || 60, 'seconds', 'How long the announcements zone displays'],
+      ['boost_before_class', (zones.roster && zones.roster.boost_before_class_minutes) || 15, 'minutes', 'Minutes before class to activate roster boost'],
+      ['boost_frequency', (zones.roster && zones.roster.boost_frequency) || 2, 'x', 'How often roster appears during boost (2 = every other zone)'],
+      ['sheets_poll_interval', sheets.poll_interval_minutes || 5, 'minutes', 'How often to poll this spreadsheet'],
+      ['mindbody_poll_interval', mb.poll_interval_minutes || 5, 'minutes', 'How often to poll MindBody schedule'],
+      ['wod_refresh_interval', wod.refresh_interval_minutes || 30, 'minutes', 'How often to re-capture the WOD'],
+      ['instagram_fetch_interval', (ig.fetch_interval_minutes) || 60, 'minutes', 'How often to fetch new Instagram reels'],
+      ['instagram_min_display', (ig.min_display_seconds) || 30, 'seconds', 'Minimum display time for reels'],
+      ['screen_off_time', sys.screen_off_start || '21:00', 'HH:MM', 'Time to turn off TV (24h format)'],
+      ['screen_on_time', sys.screen_off_end || '04:30', 'HH:MM', 'Time to turn on TV (24h format)'],
+    ];
+  }
+
+  /**
+   * Create the Timing tab if it doesn't exist, populated with current config values.
+   * If it already exists, leave it alone (user may have edited values).
+   */
+  async _writeTimingTab(doc) {
+    try {
+      if (doc.sheetsByTitle['Timing']) {
+        return; // Already exists — don't overwrite user edits
+      }
+
+      const rows = this._getTimingRows();
+      const headers = rows[0];
+      const sheet = await doc.addSheet({
+        title: 'Timing',
+        headerValues: headers
+      });
+
+      // Add data rows (skip header — already set by addSheet)
+      const dataRows = rows.slice(1).map(row => ({
+        Setting: row[0],
+        Value: row[1],
+        Unit: row[2],
+        Description: row[3]
+      }));
+      await sheet.addRows(dataRows);
+
+      // Set column widths
+      await sheet.updateDimensionProperties('COLUMNS', { pixelSize: 220 }, { startIndex: 0, endIndex: 1 });
+      await sheet.updateDimensionProperties('COLUMNS', { pixelSize: 100 }, { startIndex: 1, endIndex: 2 });
+      await sheet.updateDimensionProperties('COLUMNS', { pixelSize: 80 }, { startIndex: 2, endIndex: 3 });
+      await sheet.updateDimensionProperties('COLUMNS', { pixelSize: 400 }, { startIndex: 3, endIndex: 4 });
+
+      console.log('[Sheets] Timing tab created with current config values');
+    } catch (err) {
+      console.warn(`[Sheets] Failed to create Timing tab: ${err.message}`);
+    }
+  }
+
+  /**
+   * Apply timing values from the Timing sheet tab to config.yaml.
+   * Only applies valid numeric changes; ignores invalid or unchanged values.
+   */
+  _applyTimingFromSheet() {
+    const timingData = this.cachedData['Timing'];
+    if (!timingData || timingData.length === 0) return;
+
+    const config = configLoader.getConfig() || {};
+    const updates = {};
+    let changed = false;
+
+    for (const row of timingData) {
+      const setting = (row.Setting || '').trim();
+      const rawValue = (row.Value || '').toString().trim();
+      if (!setting || !rawValue) continue;
+
+      // Parse numeric values (allow HH:MM for screen times)
+      const numValue = Number(rawValue);
+      const isTime = /^\d{1,2}:\d{2}$/.test(rawValue);
+
+      if (!isTime && (isNaN(numValue) || numValue <= 0)) continue;
+
+      switch (setting) {
+        case 'wod_duration': {
+          const current = (config.zones && config.zones.wod && config.zones.wod.duration_seconds) || 120;
+          if (numValue !== current) {
+            if (!updates.zones) updates.zones = {};
+            if (!updates.zones.wod) updates.zones.wod = {};
+            updates.zones.wod.duration_seconds = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'video_fallback': {
+          const current = (config.zones && config.zones.video && config.zones.video.fallback_seconds) || 180;
+          if (numValue !== current) {
+            if (!updates.zones) updates.zones = {};
+            if (!updates.zones.video) updates.zones.video = {};
+            updates.zones.video.fallback_seconds = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'roster_duration': {
+          const current = (config.zones && config.zones.roster && config.zones.roster.duration_seconds) || 60;
+          if (numValue !== current) {
+            if (!updates.zones) updates.zones = {};
+            if (!updates.zones.roster) updates.zones.roster = {};
+            updates.zones.roster.duration_seconds = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'leaderboard_duration': {
+          const current = (config.zones && config.zones.leaderboard && config.zones.leaderboard.duration_seconds) || 90;
+          if (numValue !== current) {
+            if (!updates.zones) updates.zones = {};
+            if (!updates.zones.leaderboard) updates.zones.leaderboard = {};
+            updates.zones.leaderboard.duration_seconds = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'announcements_duration': {
+          const current = (config.zones && config.zones.announcements && config.zones.announcements.duration_seconds) || 60;
+          if (numValue !== current) {
+            if (!updates.zones) updates.zones = {};
+            if (!updates.zones.announcements) updates.zones.announcements = {};
+            updates.zones.announcements.duration_seconds = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'boost_before_class': {
+          const current = (config.zones && config.zones.roster && config.zones.roster.boost_before_class_minutes) || 15;
+          if (numValue !== current) {
+            if (!updates.zones) updates.zones = {};
+            if (!updates.zones.roster) updates.zones.roster = {};
+            updates.zones.roster.boost_before_class_minutes = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'boost_frequency': {
+          const current = (config.zones && config.zones.roster && config.zones.roster.boost_frequency) || 2;
+          if (numValue !== current) {
+            if (!updates.zones) updates.zones = {};
+            if (!updates.zones.roster) updates.zones.roster = {};
+            updates.zones.roster.boost_frequency = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'sheets_poll_interval': {
+          const current = (config.sheets && config.sheets.poll_interval_minutes) || 5;
+          if (numValue !== current) {
+            if (!updates.sheets) updates.sheets = {};
+            updates.sheets.poll_interval_minutes = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'mindbody_poll_interval': {
+          const current = (config.mindbody && config.mindbody.poll_interval_minutes) || 5;
+          if (numValue !== current) {
+            if (!updates.mindbody) updates.mindbody = {};
+            updates.mindbody.poll_interval_minutes = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'wod_refresh_interval': {
+          const current = (config.wodscreen && config.wodscreen.refresh_interval_minutes) || 30;
+          if (numValue !== current) {
+            if (!updates.wodscreen) updates.wodscreen = {};
+            updates.wodscreen.refresh_interval_minutes = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'instagram_fetch_interval': {
+          const current = (config.instagram && config.instagram.fetch_interval_minutes) || 60;
+          if (numValue !== current) {
+            if (!updates.instagram) updates.instagram = {};
+            updates.instagram.fetch_interval_minutes = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'instagram_min_display': {
+          const current = (config.instagram && config.instagram.min_display_seconds) || 30;
+          if (numValue !== current) {
+            if (!updates.instagram) updates.instagram = {};
+            updates.instagram.min_display_seconds = numValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'screen_off_time': {
+          if (isTime && rawValue !== (config.system && config.system.screen_off_start || '21:00')) {
+            if (!updates.system) updates.system = {};
+            updates.system.screen_off_start = rawValue;
+            changed = true;
+          }
+          break;
+        }
+        case 'screen_on_time': {
+          if (isTime && rawValue !== (config.system && config.system.screen_off_end || '04:30')) {
+            if (!updates.system) updates.system = {};
+            updates.system.screen_off_end = rawValue;
+            changed = true;
+          }
+          break;
+        }
+      }
+    }
+
+    if (changed) {
+      try {
+        configLoader.saveConfig(updates);
+        console.log('[Sheets] Timing values applied to config:', JSON.stringify(updates));
+      } catch (err) {
+        console.warn(`[Sheets] Failed to apply timing values: ${err.message}`);
+      }
     }
   }
 
