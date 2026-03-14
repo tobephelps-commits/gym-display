@@ -498,10 +498,18 @@ class WodScraper {
 
       await this._sleep(1000);
 
-      // Close the settings panel — click the collapse arrow "‹" at top of panel
-      // The arrow is near x=210, y=15 in the Options header bar
-      await this.page.mouse.click(215, 15);
-      console.log('[WodScraper] Clicked panel collapse arrow');
+      // Close the settings panel — click the collapse button in the drawer header
+      await this.page.evaluate(() => {
+        const header = document.querySelector('.drawerHeader');
+        if (header) {
+          const btn = header.querySelector('button');
+          if (btn) { btn.click(); return; }
+        }
+        // Fallback: click the settings gear again to toggle panel off
+        const settingsBtn = document.querySelector('[class*="setting"] button, footer ~ div button');
+        if (settingsBtn) settingsBtn.click();
+      });
+      console.log('[WodScraper] Settings panel closed');
 
       await this._sleep(1000);
       console.log('[WodScraper] Settings configuration complete');
