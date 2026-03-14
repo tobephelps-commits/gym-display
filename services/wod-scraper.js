@@ -221,7 +221,7 @@ class WodScraper {
         console.log('[WodScraper] No screen selection found — may already be on WOD page');
       }
 
-      // Step 5: Open settings and set display size to 2
+      // Step 5: Open settings and set display size to 1
       await this._configureDisplaySettings();
 
       // Wait for animations to fully load with the new display size
@@ -396,7 +396,7 @@ class WodScraper {
 
   /**
    * Open the WodScreen settings panel (gear icon, bottom-left) and set
-   * the display size to 2. This accommodates the programming format which
+   * the display size to 1. This accommodates the programming format which
    * has more information on screen.
    */
   async _configureDisplaySettings() {
@@ -473,7 +473,7 @@ class WodScraper {
           for (const item of menuItems) {
             const text = (item.textContent || '').trim();
             const dataValue = item.getAttribute('data-value');
-            if (text === '2' || dataValue === '2') {
+            if (text === '1' || dataValue === '1') {
               item.click();
               return 'option-clicked';
             }
@@ -482,16 +482,16 @@ class WodScraper {
         });
 
         if (optionClicked) {
-          console.log('[WodScraper] Display size set to 2');
+          console.log('[WodScraper] Display size set to 1');
         } else {
-          console.log('[WodScraper] Could not find size option "2" in dropdown');
+          console.log('[WodScraper] Could not find size option "1" in dropdown');
         }
       } else {
         console.log('[WodScraper] distanceNumber dropdown not found');
       }
 
       if (sizeSet) {
-        console.log(`[WodScraper] Display size set to 2 via ${sizeSet}`);
+        console.log(`[WodScraper] Display size set to 1 via ${sizeSet}`);
       } else {
         console.log('[WodScraper] Could not find display size control — may need manual configuration');
       }
