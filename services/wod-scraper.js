@@ -498,23 +498,10 @@ class WodScraper {
 
       await this._sleep(1000);
 
-      // Close the settings panel — click outside it or find a close button
-      await this.page.evaluate(() => {
-        // Try close/done/save button first
-        const buttons = document.querySelectorAll('button, [role="button"], a');
-        for (const btn of buttons) {
-          const text = (btn.textContent || '').toLowerCase().trim();
-          if (text === 'close' || text === 'done' || text === 'save' || text === '×' || text === 'x' || text === 'ok') {
-            btn.click();
-            return;
-          }
-        }
-        // Try clicking a backdrop/overlay
-        const overlay = document.querySelector('[class*="overlay"], [class*="backdrop"], [class*="modal-bg"]');
-        if (overlay) {
-          overlay.click();
-        }
-      });
+      // Close the settings panel — click the collapse arrow "‹" at top of panel
+      // The arrow is near x=210, y=15 in the Options header bar
+      await this.page.mouse.click(215, 15);
+      console.log('[WodScraper] Clicked panel collapse arrow');
 
       await this._sleep(1000);
       console.log('[WodScraper] Settings configuration complete');
