@@ -443,36 +443,52 @@ class WodScraper {
 
       await this._sleep(2000);
 
-      // Look for the Display Size dropdown and set it to 2
-      // The Options panel has a <select> dropdown under a "Display Size" label
+      // Set Display Size to 2 via the Material UI custom dropdown
+      // The control is: <input type="hidden" id="distanceNumber" value="4">
+      // with a <div role="button"> trigger that opens a dropdown menu
+      // Click the dropdown trigger to open it, then select the "2" option
       const sizeSet = await this.page.evaluate(() => {
-        // Strategy 1: Find all <select> elements and check if any is near "Display Size" text
-        const selects = document.querySelectorAll('select');
-        for (const sel of selects) {
-          // Walk up the DOM to find surrounding text mentioning "display size"
-          let node = sel;
-          for (let i = 0; i < 5 && node; i++) {
-            node = node.parentElement;
-            if (node && (node.textContent || '').toLowerCase().includes('display size')) {
-              sel.value = '2';
-              sel.dispatchEvent(new Event('change', { bubbles: true }));
-              return 'select-parent-text';
+        // Find the dropdown trigger button near the distanceNumber input
+        const hiddenInput = document.getElementById('distanceNumber');
+        if (!hiddenInput) return null;
+
+        const wrapper = hiddenInput.closest('div');
+        if (!wrapper) return null;
+
+        const trigger = wrapper.querySelector('[role="button"]');
+        if (!trigger) return null;
+
+        trigger.click();
+        return 'dropdown-opened';
+      });
+
+      if (sizeSet) {
+        console.log(`[WodScraper] Display size dropdown opened`);
+        await this._sleep(1000);
+
+        // Click the option "2" in the dropdown menu (Material UI renders a portal/menu)
+        const optionClicked = await this.page.evaluate(() => {
+          // MUI dropdown options are rendered as <li> items in a menu portal
+          const menuItems = document.querySelectorAll('[role="option"], [role="menuitem"], li[data-value], ul li');
+          for (const item of menuItems) {
+            const text = (item.textContent || '').trim();
+            const dataValue = item.getAttribute('data-value');
+            if (text === '2' || dataValue === '2') {
+              item.click();
+              return 'option-clicked';
             }
           }
-        }
+          return null;
+        });
 
-        // Strategy 2: Just set every <select> that has numeric options including 2
-        for (const sel of selects) {
-          const options = Array.from(sel.options).map(o => o.value);
-          if (options.includes('2') && options.includes('4')) {
-            sel.value = '2';
-            sel.dispatchEvent(new Event('change', { bubbles: true }));
-            return 'select-numeric';
-          }
+        if (optionClicked) {
+          console.log('[WodScraper] Display size set to 2');
+        } else {
+          console.log('[WodScraper] Could not find size option "2" in dropdown');
         }
-
-        return null;
-      });
+      } else {
+        console.log('[WodScraper] distanceNumber dropdown not found');
+      }
 
       if (sizeSet) {
         console.log(`[WodScraper] Display size set to 2 via ${sizeSet}`);
