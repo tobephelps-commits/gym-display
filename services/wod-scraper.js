@@ -443,56 +443,34 @@ class WodScraper {
 
       await this._sleep(2000);
 
-      // Look for display size control and set it to 2
+      // Look for the Display Size dropdown and set it to 2
+      // The Options panel has a <select> dropdown under a "Display Size" label
       const sizeSet = await this.page.evaluate(() => {
-        // Look for inputs, selects, or sliders related to "size" or "display"
-        const allInputs = document.querySelectorAll('input, select, [role="slider"], [role="spinbutton"]');
-        for (const input of allInputs) {
-          const label = (input.getAttribute('aria-label') || '').toLowerCase();
-          const name = (input.getAttribute('name') || '').toLowerCase();
-          const id = (input.id || '').toLowerCase();
-          // Check nearby labels
-          const parent = input.closest('label, div, li, tr, [class*="field"], [class*="setting"]');
-          const parentText = parent ? (parent.textContent || '').toLowerCase() : '';
-
-          if (label.includes('size') || label.includes('display') ||
-              name.includes('size') || name.includes('display') ||
-              id.includes('size') || id.includes('display') ||
-              parentText.includes('display size') || parentText.includes('font size') ||
-              parentText.includes('text size') || parentText.includes('size')) {
-
-            if (input.tagName === 'SELECT') {
-              input.value = '2';
-              input.dispatchEvent(new Event('change', { bubbles: true }));
-              return 'select';
-            } else if (input.type === 'range') {
-              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-              nativeInputValueSetter.call(input, '2');
-              input.dispatchEvent(new Event('input', { bubbles: true }));
-              input.dispatchEvent(new Event('change', { bubbles: true }));
-              return 'range';
-            } else if (input.type === 'number' || input.type === 'text' || !input.type) {
-              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-              nativeInputValueSetter.call(input, '2');
-              input.dispatchEvent(new Event('input', { bubbles: true }));
-              input.dispatchEvent(new Event('change', { bubbles: true }));
-              return 'input';
+        // Strategy 1: Find all <select> elements and check if any is near "Display Size" text
+        const selects = document.querySelectorAll('select');
+        for (const sel of selects) {
+          // Walk up the DOM to find surrounding text mentioning "display size"
+          let node = sel;
+          for (let i = 0; i < 5 && node; i++) {
+            node = node.parentElement;
+            if (node && (node.textContent || '').toLowerCase().includes('display size')) {
+              sel.value = '2';
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+              return 'select-parent-text';
             }
           }
         }
 
-        // Fallback: look for clickable number options (e.g., buttons labeled 1, 2, 3)
-        const buttons = document.querySelectorAll('button, [role="button"], [role="option"], li, span');
-        for (const btn of buttons) {
-          const text = (btn.textContent || '').trim();
-          if (text === '2') {
-            const parent = btn.closest('[class*="size"], [class*="display"], [class*="setting"]');
-            if (parent) {
-              btn.click();
-              return 'button';
-            }
+        // Strategy 2: Just set every <select> that has numeric options including 2
+        for (const sel of selects) {
+          const options = Array.from(sel.options).map(o => o.value);
+          if (options.includes('2') && options.includes('4')) {
+            sel.value = '2';
+            sel.dispatchEvent(new Event('change', { bubbles: true }));
+            return 'select-numeric';
           }
         }
+
         return null;
       });
 
