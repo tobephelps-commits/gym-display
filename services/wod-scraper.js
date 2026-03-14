@@ -215,11 +215,18 @@ class WodScraper {
         10000
       );
       if (wodScreenClicked) {
-        console.log('[WodScraper] Selected Daily WOD screen, waiting for content...');
-        await this._sleep(5000);
+        console.log('[WodScraper] Selected Daily WOD screen, waiting for content to load...');
+        await this._sleep(8000);
       } else {
         console.log('[WodScraper] No screen selection found — may already be on WOD page');
       }
+
+      // Step 5: Open settings and set display size to 2
+      await this._configureDisplaySettings();
+
+      // Wait for animations to fully load with the new display size
+      console.log('[WodScraper] Waiting for animations to load...');
+      await this._sleep(10000);
 
       // Store the resulting page URL as relative pathname (for use with /wod-proxy)
       this.wodPageUrl = new URL(this.page.url()).pathname;
@@ -385,6 +392,141 @@ class WodScraper {
       await this._sleep(500);
     }
     return false;
+  }
+
+  /**
+   * Open the WodScreen settings panel (gear icon, bottom-left) and set
+   * the display size to 2. This accommodates the programming format which
+   * has more information on screen.
+   */
+  async _configureDisplaySettings() {
+    try {
+      console.log('[WodScraper] Opening settings to set display size...');
+
+      // Click the settings/gear icon in the bottom-left corner
+      const settingsClicked = await this.page.evaluate(() => {
+        // Look for gear/settings icon — typically an <i>, <svg>, or <button> in the bottom-left
+        // Try multiple approaches: icon class names, aria labels, position-based
+        const candidates = document.querySelectorAll(
+          'button, [role="button"], i, svg, a, [class*="setting"], [class*="gear"], [class*="cog"], [class*="config"], [aria-label*="setting"], [title*="setting"]'
+        );
+        for (const el of candidates) {
+          const rect = el.getBoundingClientRect();
+          // Bottom-left quadrant: x < 200, y > window height - 200
+          if (rect.x < 200 && rect.y > window.innerHeight - 200 && rect.width > 0) {
+            el.click();
+            return 'clicked-by-position';
+          }
+        }
+        // Fallback: look for any clickable element with gear/settings text or icon
+        for (const el of candidates) {
+          const text = (el.textContent || '').toLowerCase();
+          const cls = (el.className || '').toString().toLowerCase();
+          const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+          if (text.includes('setting') || text.includes('gear') || text.includes('⚙') ||
+              cls.includes('setting') || cls.includes('gear') || cls.includes('cog') ||
+              aria.includes('setting')) {
+            el.click();
+            return 'clicked-by-text';
+          }
+        }
+        return null;
+      });
+
+      if (!settingsClicked) {
+        console.log('[WodScraper] Settings icon not found — trying bottom-left click');
+        // Direct click on bottom-left area where the icon typically is
+        await this.page.mouse.click(40, 1050);
+      } else {
+        console.log(`[WodScraper] Settings icon ${settingsClicked}`);
+      }
+
+      await this._sleep(2000);
+
+      // Look for display size control and set it to 2
+      const sizeSet = await this.page.evaluate(() => {
+        // Look for inputs, selects, or sliders related to "size" or "display"
+        const allInputs = document.querySelectorAll('input, select, [role="slider"], [role="spinbutton"]');
+        for (const input of allInputs) {
+          const label = (input.getAttribute('aria-label') || '').toLowerCase();
+          const name = (input.getAttribute('name') || '').toLowerCase();
+          const id = (input.id || '').toLowerCase();
+          // Check nearby labels
+          const parent = input.closest('label, div, li, tr, [class*="field"], [class*="setting"]');
+          const parentText = parent ? (parent.textContent || '').toLowerCase() : '';
+
+          if (label.includes('size') || label.includes('display') ||
+              name.includes('size') || name.includes('display') ||
+              id.includes('size') || id.includes('display') ||
+              parentText.includes('display size') || parentText.includes('font size') ||
+              parentText.includes('text size') || parentText.includes('size')) {
+
+            if (input.tagName === 'SELECT') {
+              input.value = '2';
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              return 'select';
+            } else if (input.type === 'range') {
+              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+              nativeInputValueSetter.call(input, '2');
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              return 'range';
+            } else if (input.type === 'number' || input.type === 'text' || !input.type) {
+              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+              nativeInputValueSetter.call(input, '2');
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+              return 'input';
+            }
+          }
+        }
+
+        // Fallback: look for clickable number options (e.g., buttons labeled 1, 2, 3)
+        const buttons = document.querySelectorAll('button, [role="button"], [role="option"], li, span');
+        for (const btn of buttons) {
+          const text = (btn.textContent || '').trim();
+          if (text === '2') {
+            const parent = btn.closest('[class*="size"], [class*="display"], [class*="setting"]');
+            if (parent) {
+              btn.click();
+              return 'button';
+            }
+          }
+        }
+        return null;
+      });
+
+      if (sizeSet) {
+        console.log(`[WodScraper] Display size set to 2 via ${sizeSet}`);
+      } else {
+        console.log('[WodScraper] Could not find display size control — may need manual configuration');
+      }
+
+      await this._sleep(1000);
+
+      // Close the settings panel — click outside it or find a close button
+      await this.page.evaluate(() => {
+        // Try close/done/save button first
+        const buttons = document.querySelectorAll('button, [role="button"], a');
+        for (const btn of buttons) {
+          const text = (btn.textContent || '').toLowerCase().trim();
+          if (text === 'close' || text === 'done' || text === 'save' || text === '×' || text === 'x' || text === 'ok') {
+            btn.click();
+            return;
+          }
+        }
+        // Try clicking a backdrop/overlay
+        const overlay = document.querySelector('[class*="overlay"], [class*="backdrop"], [class*="modal-bg"]');
+        if (overlay) {
+          overlay.click();
+        }
+      });
+
+      await this._sleep(1000);
+      console.log('[WodScraper] Settings configuration complete');
+    } catch (err) {
+      console.warn(`[WodScraper] Settings configuration failed (non-fatal): ${err.message}`);
+    }
   }
 
   /**
