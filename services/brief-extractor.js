@@ -130,22 +130,29 @@ class BriefExtractor {
         // Debug: log page title and iframe/link counts to help diagnose
         const debug = await page.evaluate(() => {
           const iframes = document.querySelectorAll('iframe');
-          const links = document.querySelectorAll('a[href*="youtube"], a[href*="youtu.be"]');
-          const allLinks = document.querySelectorAll('a');
+          // Broad YouTube link search
+          const ytLinks = document.querySelectorAll('a[href*="youtube"], a[href*="youtu.be"], a[href*="youtu"]');
           return {
             title: document.title,
             iframeCount: iframes.length,
             iframeSrcs: Array.from(iframes).map(f => f.src).slice(0, 5),
-            ytLinkCount: links.length,
+            ytLinkCount: ytLinks.length,
+            ytLinkHrefs: Array.from(ytLinks).map(l => l.href).slice(0, 5),
             bodyLength: document.body.innerHTML.length,
-            bodySnippet: document.body.innerText.substring(0, 500)
+            // Search for any youtube references in raw HTML
+            ytInHtml: (document.body.innerHTML.match(/youtu[^\s"'<>]{5,80}/g) || []).slice(0, 10)
           };
         });
         console.log(`[BriefExtractor] Debug — title: "${debug.title}", iframes: ${debug.iframeCount}, ytLinks: ${debug.ytLinkCount}, bodyLen: ${debug.bodyLength}`);
+        if (debug.ytLinkHrefs.length > 0) {
+          console.log(`[BriefExtractor] Debug — YT link hrefs: ${JSON.stringify(debug.ytLinkHrefs)}`);
+        }
         if (debug.iframeCount > 0) {
           console.log(`[BriefExtractor] Debug — iframe srcs: ${JSON.stringify(debug.iframeSrcs)}`);
         }
-        console.log(`[BriefExtractor] Debug — body snippet: ${debug.bodySnippet.substring(0, 200)}`);
+        if (debug.ytInHtml.length > 0) {
+          console.log(`[BriefExtractor] Debug — YT in HTML: ${JSON.stringify(debug.ytInHtml)}`);
+        }
 
         console.log('[BriefExtractor] No brief video found for today');
         // If previous brief is >24h old, disable it in Sheets
