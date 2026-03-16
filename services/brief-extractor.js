@@ -78,7 +78,7 @@ class BriefExtractor {
       console.log(`[BriefExtractor] Navigating to ${briefUrl}`);
 
       try {
-        await page.goto(briefUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.goto(briefUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
       } catch (navErr) {
         console.warn(`[BriefExtractor] Navigation failed (BTWB may be down): ${navErr.message}`);
         return null;
@@ -92,7 +92,7 @@ class BriefExtractor {
         await this._loginToBtwb(page, wodConfig);
         // Re-navigate after login
         try {
-          await page.goto(briefUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+          await page.goto(briefUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
           console.log(`[BriefExtractor] Post-login URL: ${page.url()}`);
         } catch (navErr) {
           console.warn(`[BriefExtractor] Post-login navigation failed: ${navErr.message}`);
@@ -100,11 +100,13 @@ class BriefExtractor {
         }
       }
 
-      // Wait for content to render (BTWB is a React SPA)
+      // Wait for React SPA content to render
       await page.waitForSelector(
         'iframe, [class*="workout"], [class*="narrative"], .track-detail, [class*="track"], [class*="freedom"], [class*="rx"]',
-        { timeout: 15000 }
+        { timeout: 20000 }
       ).catch(() => {});
+      // Extra wait for SPA hydration
+      await new Promise(r => setTimeout(r, 5000));
 
       // BTWB whiteboard shows multiple workout tracks. The brief video is
       // typically inside the RX version. We may need to click into it to
