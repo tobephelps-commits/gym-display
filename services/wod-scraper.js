@@ -15,6 +15,7 @@ class WodScraper {
     this.wodPageUrl = null;
     this._sessionInterval = null;
     this._dailyTimeout = null;
+    this._postScrapeCallbacks = [];
 
     // Listen for config changes to pick up credential updates
     configLoader.onConfigChange((newConfig) => {
@@ -560,6 +561,15 @@ class WodScraper {
           await this.captureScreenshot();
           await this._captureRenderedHtml();
 
+          // Run post-scrape callbacks (e.g., brief extraction)
+          for (const cb of this._postScrapeCallbacks) {
+            try {
+              await cb();
+            } catch (err) {
+              console.warn(`[WodScraper] Post-scrape callback error: ${err.message}`);
+            }
+          }
+
           // Validate session — check if we're still on a WOD page (not redirected to login)
           const currentUrl = this.page.url();
           const isLoginPage = currentUrl.includes('login') ||
@@ -693,6 +703,15 @@ class WodScraper {
       cookieCount: this.cookies ? this.cookies.length : 0,
       hasCookies: !!(this.cookies && this.cookies.length > 0),
     };
+  }
+
+  /**
+   * Register a callback to run after each successful scrape cycle.
+   * Callbacks are called with no arguments and should be async-safe.
+   * @param {Function} callback
+   */
+  onPostScrape(callback) {
+    this._postScrapeCallbacks.push(callback);
   }
 
   /**

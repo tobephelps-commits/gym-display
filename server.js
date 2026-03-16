@@ -18,6 +18,7 @@ const healthMonitor = require('./services/zone-health-monitor');
 const notificationService = require('./services/notification-service');
 const alertManager = require('./services/alert-manager');
 const liveEventService = require('./services/live-event-service').create(sheetsClient, configLoader);
+const briefExtractor = require('./services/brief-extractor').create(wodScraper, sheetsClient);
 const { createWodProxy } = require('./services/wod-proxy');
 
 const config = configLoader.getConfig();
@@ -254,6 +255,20 @@ app.post('/api/wod/refresh', async (req, res) => {
   }
 });
 
+// Brief Extractor API endpoints
+app.get('/api/brief/status', (req, res) => {
+  res.json(briefExtractor.getStatus());
+});
+
+app.post('/api/brief/refresh', adminAuthMiddleware, async (req, res) => {
+  try {
+    await briefExtractor.extractAndInject();
+    res.json({ message: 'Brief extraction triggered', status: briefExtractor.getStatus() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Roster API endpoints
 app.get('/api/roster', (req, res) => {
   res.json(mindbodyClient.getRoster());
@@ -370,7 +385,8 @@ app.get('/api/admin/status', adminAuthMiddleware, (req, res) => {
       count: announceData.count
     },
     health: monitor ? monitor.getHealthStatus() : null,
-    liveEvent: liveEventService.getStatus()
+    liveEvent: liveEventService.getStatus(),
+    brief: briefExtractor.getStatus()
   });
 });
 
@@ -455,11 +471,14 @@ app.post('/api/admin/refresh/:service', adminAuthMiddleware, async (req, res) =>
       case 'live-event':
         liveEventService._refresh();
         return res.json({ success: true, service, message: 'Live event data refreshed' });
+      case 'brief':
+        await briefExtractor.extractAndInject();
+        return res.json({ success: true, service, message: 'Brief extraction triggered' });
       case 'health':
         if (monitor) monitor.checkAll();
         return res.json({ success: true, service, message: 'Health check triggered' });
       default:
-        return res.status(400).json({ error: `Unknown service: ${service}`, supported: ['wod', 'sheets', 'videos', 'live-event', 'health'] });
+        return res.status(400).json({ error: `Unknown service: ${service}`, supported: ['wod', 'sheets', 'videos', 'live-event', 'brief', 'health'] });
     }
   } catch (err) {
     console.error(`[Admin] Refresh ${service} failed: ${err.message}`);
@@ -486,6 +505,7 @@ const server = app.listen(port, bindAddress, () => {
         console.log('[Server] Initializing WodScraper' + (attempt > 1 ? ' (attempt ' + attempt + '/' + maxRetries + ')' : '') + '...');
         await wodScraper.launch();
         await wodScraper.login();
+        wodScraper.onPostScrape(() => briefExtractor.extractAndInject());
         wodScraper.startSessionLoop();
         console.log('[Server] WodScraper initialized successfully');
         break;
