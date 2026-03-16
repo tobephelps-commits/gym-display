@@ -16,6 +16,7 @@ None
 - ✅ [v1.3 Resilience](milestones/v1.3-ROADMAP.md) (Phases 12-15) — SHIPPED 2026-02-24
 - ✅ [v1.4 Video Scheduling](milestones/v1.4-ROADMAP.md) (Phase 16) — SHIPPED 2026-02-25
 - ✅ [v1.5 Live Events](milestones/v1.5-ROADMAP.md) (Phase 17) — SHIPPED 2026-02-26
+- ✅ [v1.6 Daily Workout Brief](milestones/v1.6-ROADMAP.md) (Phase 18) — SHIPPED 2026-03-16
 
 ## Phases
 
@@ -90,10 +91,14 @@ See [milestone archive](milestones/v1.5-ROADMAP.md) for full phase details.
 
 </details>
 
+### v1.6 Daily Workout Brief (Phase 18)
+
+- [x] Phase 18: Daily Workout Brief Video (1/1 plans) — completed 2026-03-16
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → … → 17
+Phases execute in numeric order: 1 → 2 → … → 18
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -114,3 +119,4 @@ Phases execute in numeric order: 1 → 2 → … → 17
 | 15. Admin Error Dashboard | v1.3 | 1/1 | Complete | 2026-02-24 |
 | 16. Day-of-Week Video Scheduling | v1.4 | 1/1 | Complete | 2026-02-25 |
 | 17. Live Event Override | v1.5 | 2/2 | Complete | 2026-02-26 |
+| 18. Daily Workout Brief Video | v1.6 | 1/1 | Complete | 2026-03-16 |

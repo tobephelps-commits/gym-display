@@ -5,17 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** The five-zone rotation (WOD, video, roster, leaderboard, announcements) must cycle reliably and continuously without crashes, stalls, or manual intervention
-**Current focus:** v1.6 Daily Workout Brief — extract BTWB daily brief YouTube video into video rotation
+**Current focus:** v1.6 Daily Workout Brief — COMPLETE
 
 ## Current Position
 
-Milestone: v1.6 Daily Workout Brief — In Progress
-Phase: 18
-Plan: 01 (BriefExtractor service + integration) — Complete
-Status: Plan 18-01 complete. BriefExtractor service created and integrated into server lifecycle.
-Last activity: 2026-03-16 — Plan 18-01 executed
+Milestone: v1.6 Daily Workout Brief — Complete
+Phase: 18 (complete)
+Plan: All plans complete
+Status: Phase 18 executed. BriefExtractor service created and integrated.
+Last activity: 2026-03-16 — Phase 18 complete
 
-Progress: █████████░ 90%
+Progress: ██████████ 100%
 
 ## Deployment Info
 
