@@ -102,21 +102,36 @@ class BriefExtractor {
 
       // Wait for content to render (BTWB is a React SPA)
       await page.waitForSelector(
-        'iframe, [class*="workout"], [class*="narrative"], .track-detail',
+        'iframe, [class*="workout"], [class*="narrative"], .track-detail, [class*="track"], [class*="freedom"], [class*="rx"]',
         { timeout: 15000 }
       ).catch(() => {});
 
+      // BTWB whiteboard shows multiple workout tracks. The brief video is
+      // typically inside the RX version. We may need to click into it to
+      // load the embedded player.
+      const rxClicked = await this._clickRxWorkout(page);
+      if (rxClicked) {
+        // Wait for the workout detail / video to render after click
+        await page.waitForSelector('iframe, video, [class*="video"], [class*="player"], [class*="brief"]', { timeout: 10000 }).catch(() => {});
+        // Extra wait for dynamic content
+        await new Promise(r => setTimeout(r, 3000));
+      }
+
       // Extract YouTube URL using three strategies
       const { videoUrl, strategy } = await page.evaluate(() => {
-        // Strategy 1: YouTube iframe src
+        // Strategy 1: YouTube iframe src (including embed)
         const iframe = document.querySelector('iframe[src*="youtube.com"], iframe[src*="youtu.be"]');
         if (iframe) return { videoUrl: iframe.src, strategy: 'iframe' };
 
-        // Strategy 2: YouTube link href
-        const link = document.querySelector('a[href*="youtube.com/watch"], a[href*="youtu.be/"]');
+        // Strategy 2: YouTube link href (watch or short URLs)
+        const link = document.querySelector('a[href*="youtube.com/watch"], a[href*="youtu.be/"], a[href*="youtube.com/embed"]');
         if (link) return { videoUrl: link.href, strategy: 'link' };
 
-        // Strategy 3: Regex scan of page HTML
+        // Strategy 3: Video/embed elements with YouTube sources
+        const videoEl = document.querySelector('video source[src*="youtube"], embed[src*="youtube"]');
+        if (videoEl) return { videoUrl: videoEl.src, strategy: 'video-element' };
+
+        // Strategy 4: Regex scan of page HTML for YouTube URLs
         const html = document.body.innerHTML;
         const match = html.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
         if (match) return { videoUrl: match[0], strategy: 'regex' };
@@ -188,6 +203,89 @@ class BriefExtractor {
       if (page) {
         try { await page.close(); } catch (_) { /* ignore */ }
       }
+    }
+  }
+
+  /**
+   * Click on the RX workout section to expand it and reveal the embedded video.
+   * BTWB whiteboard shows tracks like "FREEDOM (RX) - Emerald".
+   * Returns true if a click was performed.
+   */
+  async _clickRxWorkout(page) {
+    try {
+      // Look for clickable elements containing "RX" or "Freedom" in workout sections
+      const clicked = await page.evaluate(() => {
+        // Gather all text-containing elements that might be workout headers
+        const allElements = document.querySelectorAll('a, button, [role="button"], h1, h2, h3, h4, h5, h6, [class*="track"], [class*="workout"], [class*="header"], [class*="title"], [class*="tab"], li, span, div');
+        const candidates = [];
+
+        for (const el of allElements) {
+          const text = el.textContent || '';
+          // Match RX workout sections — look for "(RX)" or "Freedom" patterns
+          if (/\(RX\)|freedom.*rx|rx.*freedom/i.test(text) && text.length < 200) {
+            candidates.push({
+              tag: el.tagName,
+              text: text.trim().substring(0, 100),
+              classes: el.className ? el.className.toString().substring(0, 100) : ''
+            });
+          }
+        }
+
+        // Find the most specific (smallest text) RX element and click it
+        if (candidates.length > 0) {
+          // Sort by text length — smallest is likely the header/tab, not a parent container
+          candidates.sort((a, b) => a.text.length - b.text.length);
+          return { found: true, candidates: candidates.slice(0, 5) };
+        }
+        return { found: false, candidates: [] };
+      });
+
+      if (clicked.found) {
+        console.log(`[BriefExtractor] Found RX workout candidates: ${JSON.stringify(clicked.candidates.map(c => c.text.substring(0, 60)))}`);
+
+        // Click the first (most specific) RX element using page context
+        const didClick = await page.evaluate(() => {
+          const allElements = document.querySelectorAll('a, button, [role="button"], h1, h2, h3, h4, h5, h6, [class*="track"], [class*="workout"], [class*="header"], [class*="title"], [class*="tab"], li, span, div');
+          for (const el of allElements) {
+            const text = (el.textContent || '').trim();
+            if (/\(RX\)|freedom.*rx|rx.*freedom/i.test(text) && text.length < 200) {
+              // Find the smallest matching element
+              const children = el.querySelectorAll('*');
+              let hasMatchingChild = false;
+              for (const child of children) {
+                if (/\(RX\)|freedom.*rx|rx.*freedom/i.test(child.textContent || '')) {
+                  hasMatchingChild = true;
+                  break;
+                }
+              }
+              if (!hasMatchingChild) {
+                el.click();
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+
+        if (didClick) {
+          console.log('[BriefExtractor] Clicked RX workout section');
+          return true;
+        }
+      }
+
+      // Fallback: log what workout sections exist on the page
+      const sections = await page.evaluate(() => {
+        const elements = document.querySelectorAll('a, button, h2, h3, h4, [class*="track"], [class*="tab"]');
+        return Array.from(elements)
+          .map(el => (el.textContent || '').trim())
+          .filter(t => t.length > 3 && t.length < 100)
+          .slice(0, 20);
+      });
+      console.log(`[BriefExtractor] Page sections: ${JSON.stringify(sections.slice(0, 10))}`);
+      return false;
+    } catch (err) {
+      console.warn(`[BriefExtractor] Click RX workout failed: ${err.message}`);
+      return false;
     }
   }
 
