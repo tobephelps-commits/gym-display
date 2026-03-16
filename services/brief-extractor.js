@@ -67,7 +67,7 @@ class BriefExtractor {
       }
 
       // Navigate to BTWB workout page
-      const briefUrl = wodConfig.brief_url || 'https://beyondthewhiteboard.com/members/workouts';
+      const briefUrl = wodConfig.brief_url || 'https://beyondthewhiteboard.com/whiteboard';
       console.log(`[BriefExtractor] Navigating to ${briefUrl}`);
 
       try {

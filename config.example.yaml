@@ -13,7 +13,7 @@ wodscreen:
   # Daily Workout Brief Video (v1.6)
   # Extracts the daily brief YouTube video from BTWB and adds it to the video playlist
   brief_enabled: true              # Set to false to disable brief extraction
-  brief_url: "https://beyondthewhiteboard.com/members/workouts"  # BTWB page with brief video
+  brief_url: "https://beyondthewhiteboard.com/whiteboard"  # BTWB page with brief video
   brief_focus: true                # true = play prominently in rotation, false = normal rotation
 
 # Display Zone Rotation
