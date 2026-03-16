@@ -59,11 +59,18 @@ class BriefExtractor {
       page = await this._wodScraper.browser.newPage();
 
       // Set BTWB cookies on the new page
-      const btwbCookies = this._wodScraper.cookies.filter(
+      const allCookies = this._wodScraper.cookies;
+      const btwbCookies = allCookies.filter(
         cookie => cookie.domain && cookie.domain.includes('beyondthewhiteboard')
       );
+      console.log(`[BriefExtractor] Total cookies: ${allCookies.length}, BTWB cookies: ${btwbCookies.length}`);
+
       if (btwbCookies.length > 0) {
         await page.setCookie(...btwbCookies);
+      } else {
+        // No BTWB cookies — need to login directly
+        console.log('[BriefExtractor] No BTWB cookies available — attempting direct login');
+        await this._loginToBtwb(page, wodConfig);
       }
 
       // Navigate to BTWB workout page
@@ -79,9 +86,18 @@ class BriefExtractor {
 
       // Check for login redirect
       const currentUrl = page.url();
+      console.log(`[BriefExtractor] Landed on: ${currentUrl}`);
       if (currentUrl.includes('signin') || currentUrl.includes('login')) {
-        console.warn('[BriefExtractor] BTWB session expired for brief extraction');
-        return null;
+        console.warn('[BriefExtractor] BTWB session expired — attempting login');
+        await this._loginToBtwb(page, wodConfig);
+        // Re-navigate after login
+        try {
+          await page.goto(briefUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+          console.log(`[BriefExtractor] Post-login URL: ${page.url()}`);
+        } catch (navErr) {
+          console.warn(`[BriefExtractor] Post-login navigation failed: ${navErr.message}`);
+          return null;
+        }
       }
 
       // Wait for content to render (BTWB is a React SPA)
@@ -111,6 +127,26 @@ class BriefExtractor {
       if (strategy) {
         console.log(`[BriefExtractor] Found video via ${strategy}: ${videoUrl}`);
       } else {
+        // Debug: log page title and iframe/link counts to help diagnose
+        const debug = await page.evaluate(() => {
+          const iframes = document.querySelectorAll('iframe');
+          const links = document.querySelectorAll('a[href*="youtube"], a[href*="youtu.be"]');
+          const allLinks = document.querySelectorAll('a');
+          return {
+            title: document.title,
+            iframeCount: iframes.length,
+            iframeSrcs: Array.from(iframes).map(f => f.src).slice(0, 5),
+            ytLinkCount: links.length,
+            bodyLength: document.body.innerHTML.length,
+            bodySnippet: document.body.innerText.substring(0, 500)
+          };
+        });
+        console.log(`[BriefExtractor] Debug — title: "${debug.title}", iframes: ${debug.iframeCount}, ytLinks: ${debug.ytLinkCount}, bodyLen: ${debug.bodyLength}`);
+        if (debug.iframeCount > 0) {
+          console.log(`[BriefExtractor] Debug — iframe srcs: ${JSON.stringify(debug.iframeSrcs)}`);
+        }
+        console.log(`[BriefExtractor] Debug — body snippet: ${debug.bodySnippet.substring(0, 200)}`);
+
         console.log('[BriefExtractor] No brief video found for today');
         // If previous brief is >24h old, disable it in Sheets
         if (this._lastExtractDate) {
@@ -145,6 +181,52 @@ class BriefExtractor {
       if (page) {
         try { await page.close(); } catch (_) { /* ignore */ }
       }
+    }
+  }
+
+  /**
+   * Login to BTWB directly using WodScreen credentials.
+   * Used when WodScraper doesn't have BTWB-domain cookies.
+   */
+  async _loginToBtwb(page, wodConfig) {
+    try {
+      const username = wodConfig.username;
+      const password = wodConfig.password;
+      if (!username || !password) {
+        console.warn('[BriefExtractor] No credentials available for BTWB login');
+        return;
+      }
+
+      console.log('[BriefExtractor] Navigating to BTWB signin...');
+      await page.goto('https://beyondthewhiteboard.com/signin', { waitUntil: 'networkidle2', timeout: 30000 });
+
+      // Wait for login form
+      await page.waitForSelector('input[type="email"], input[name="email"], input[type="text"]', { timeout: 10000 }).catch(() => {});
+
+      // Fill email
+      const emailInput = await page.$('input[type="email"]') || await page.$('input[name="email"]') || await page.$('input[type="text"]');
+      if (emailInput) {
+        await emailInput.click({ clickCount: 3 });
+        await emailInput.type(username);
+      }
+
+      // Fill password
+      const passInput = await page.$('input[type="password"]');
+      if (passInput) {
+        await passInput.click({ clickCount: 3 });
+        await passInput.type(password);
+      }
+
+      // Submit
+      const submitBtn = await page.$('button[type="submit"]') || await page.$('input[type="submit"]') || await page.$('.btn-primary');
+      if (submitBtn) {
+        await submitBtn.click();
+        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
+      }
+
+      console.log(`[BriefExtractor] Post-login URL: ${page.url()}`);
+    } catch (err) {
+      console.warn(`[BriefExtractor] BTWB login failed: ${err.message}`);
     }
   }
 
