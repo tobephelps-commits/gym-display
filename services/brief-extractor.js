@@ -261,8 +261,12 @@ class BriefExtractor {
         return null;
       }
 
-      // Write to Sheets Playlist tab
+      // Write to Sheets Playlist tab, then trigger a Sheets re-poll
+      // so the video manager picks up the new URL immediately
       await this._writeBriefToPlaylist(normalizedUrl);
+      this._sheetsClient.poll().catch(err =>
+        console.warn(`[BriefExtractor] Sheets re-poll failed: ${err.message}`)
+      );
       return normalizedUrl;
     } catch (err) {
       console.warn(`[BriefExtractor] Extraction failed: ${err.message}`);
