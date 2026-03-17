@@ -275,82 +275,94 @@ class BriefExtractor {
   }
 
   /**
-   * Click on the RX workout section to expand it and reveal the embedded video.
-   * BTWB whiteboard shows tracks like "FREEDOM (RX) - Emerald".
+   * Click on TODAY's RX workout section to expand it and reveal the embedded video.
+   * BTWB whiteboard is organized by date columns with H3 headers like "Tue | 17".
+   * We find today's date column, then click the RX workout within it.
    * Returns true if a click was performed.
    */
   async _clickRxWorkout(page) {
     try {
-      // Look for clickable elements containing "RX" or "Freedom" in workout sections
-      const clicked = await page.evaluate(() => {
-        // Gather all text-containing elements that might be workout headers
-        const allElements = document.querySelectorAll('a, button, [role="button"], h1, h2, h3, h4, h5, h6, [class*="track"], [class*="workout"], [class*="header"], [class*="title"], [class*="tab"], li, span, div');
-        const candidates = [];
+      const todayDate = new Date().getDate(); // e.g. 17
+
+      const result = await page.evaluate((todayDate) => {
+        // Step 1: Find today's date header (H3 with "| {date}")
+        const dateHeaders = document.querySelectorAll('h3');
+        let todayHeader = null;
+        for (const h of dateHeaders) {
+          const text = (h.textContent || '').trim();
+          // Match patterns like "Tue | 17" or "Tue\n          | 17"
+          const match = text.match(/\|\s*(\d{1,2})/);
+          if (match && parseInt(match[1], 10) === todayDate) {
+            todayHeader = h;
+            break;
+          }
+        }
+
+        if (!todayHeader) {
+          return { found: false, reason: 'no-date-header', todayDate };
+        }
+
+        // Step 2: Find the day container that holds this header.
+        // Walk up to find a parent that contains both the date header and workout content.
+        // Then look for sibling or child containers with RX workouts.
+        let dayContainer = todayHeader.parentElement;
+        // Walk up until we find a container that has RX workout text
+        for (let i = 0; i < 5 && dayContainer; i++) {
+          const text = dayContainer.textContent || '';
+          if (/\(RX\)/i.test(text) && text.length > 200) {
+            break; // This container has workout content
+          }
+          dayContainer = dayContainer.parentElement;
+        }
+
+        if (!dayContainer) {
+          return { found: false, reason: 'no-day-container', todayDate };
+        }
+
+        // Step 3: Within this container, find the RX workout element.
+        // Look for the most specific (leaf) element containing "(RX)".
+        const allElements = dayContainer.querySelectorAll('a, button, [role="button"], h1, h2, h3, h4, h5, h6, span, div, li, [class*="track"], [class*="workout"]');
+        let bestEl = null;
+        let bestLen = Infinity;
+        let rxWorkoutText = '';
 
         for (const el of allElements) {
-          const text = el.textContent || '';
-          // Match RX workout sections — look for "(RX)" or "Freedom" patterns
-          if (/\(RX\)|freedom.*rx|rx.*freedom/i.test(text) && text.length < 200) {
-            candidates.push({
-              tag: el.tagName,
-              text: text.trim().substring(0, 100),
-              classes: el.className ? el.className.toString().substring(0, 100) : ''
-            });
-          }
-        }
+          const text = (el.textContent || '').trim();
+          if (!/\(RX\)/i.test(text)) continue;
+          if (text.length >= 200) continue;
 
-        // Find the most specific (smallest text) RX element and click it
-        if (candidates.length > 0) {
-          // Sort by text length — smallest is likely the header/tab, not a parent container
-          candidates.sort((a, b) => a.text.length - b.text.length);
-          return { found: true, candidates: candidates.slice(0, 5) };
-        }
-        return { found: false, candidates: [] };
-      });
-
-      if (clicked.found) {
-        console.log(`[BriefExtractor] Found RX workout candidates: ${JSON.stringify(clicked.candidates.map(c => c.text.substring(0, 60)))}`);
-
-        // Click the first (most specific) RX element using page context
-        const didClick = await page.evaluate(() => {
-          const allElements = document.querySelectorAll('a, button, [role="button"], h1, h2, h3, h4, h5, h6, [class*="track"], [class*="workout"], [class*="header"], [class*="title"], [class*="tab"], li, span, div');
-          for (const el of allElements) {
-            const text = (el.textContent || '').trim();
-            if (/\(RX\)|freedom.*rx|rx.*freedom/i.test(text) && text.length < 200) {
-              // Find the smallest matching element
-              const children = el.querySelectorAll('*');
-              let hasMatchingChild = false;
-              for (const child of children) {
-                if (/\(RX\)|freedom.*rx|rx.*freedom/i.test(child.textContent || '')) {
-                  hasMatchingChild = true;
-                  break;
-                }
-              }
-              if (!hasMatchingChild) {
-                el.click();
-                return true;
-              }
+          // Check if this is a leaf RX element (no child also matches)
+          const children = el.querySelectorAll('*');
+          let hasMatchingChild = false;
+          for (const child of children) {
+            if (/\(RX\)/i.test(child.textContent || '') && child.textContent.trim().length < 200) {
+              hasMatchingChild = true;
+              break;
             }
           }
-          return false;
-        });
 
-        if (didClick) {
-          console.log('[BriefExtractor] Clicked RX workout section');
-          return true;
+          if (!hasMatchingChild && text.length < bestLen) {
+            bestEl = el;
+            bestLen = text.length;
+            rxWorkoutText = text.substring(0, 100);
+          }
         }
-      }
 
-      // Fallback: log what workout sections exist on the page
-      const sections = await page.evaluate(() => {
-        const elements = document.querySelectorAll('a, button, h2, h3, h4, [class*="track"], [class*="tab"]');
-        return Array.from(elements)
-          .map(el => (el.textContent || '').trim())
-          .filter(t => t.length > 3 && t.length < 100)
-          .slice(0, 20);
-      });
-      console.log(`[BriefExtractor] Page sections: ${JSON.stringify(sections.slice(0, 10))}`);
-      return false;
+        if (bestEl) {
+          bestEl.click();
+          return { found: true, clicked: rxWorkoutText };
+        }
+
+        return { found: false, reason: 'no-rx-in-day-container', todayDate };
+      }, todayDate);
+
+      if (result.found) {
+        console.log(`[BriefExtractor] Clicked today's RX workout: "${result.clicked}"`);
+        return true;
+      } else {
+        console.log(`[BriefExtractor] Could not find today's RX workout: ${result.reason} (date=${todayDate})`);
+        return false;
+      }
     } catch (err) {
       console.warn(`[BriefExtractor] Click RX workout failed: ${err.message}`);
       return false;
