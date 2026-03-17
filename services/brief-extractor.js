@@ -108,6 +108,72 @@ class BriefExtractor {
       // Extra wait for SPA hydration
       await new Promise(r => setTimeout(r, 5000));
 
+      // Diagnose page structure — find date sections and workout layout
+      const pageStructure = await page.evaluate(() => {
+        // Look for date-related elements (today's date, calendar nav, etc.)
+        const today = new Date();
+        const monthNames = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+        const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+        const todayStr = today.getDate().toString();
+        const monthStr = monthNames[today.getMonth()];
+        const dayStr = dayNames[today.getDay()];
+
+        // Find all elements with "RX" in text, grouped by their parent containers
+        const rxElements = document.querySelectorAll('*');
+        const workoutSections = [];
+        for (const el of rxElements) {
+          const text = (el.textContent || '').trim();
+          if (/FREEDOM\s*\(RX\)/i.test(text) && text.length < 150) {
+            // Check for date context in nearby elements
+            let parent = el.parentElement;
+            let dateContext = '';
+            for (let i = 0; i < 5 && parent; i++) {
+              const parentText = parent.textContent || '';
+              // Look for date patterns like "Mar 17", "March 17", "17", day names
+              const dateMatch = parentText.match(/(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*[\s,]*(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2}/i)
+                || parentText.match(/(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2}/i)
+                || parentText.match(/\d{1,2}\/\d{1,2}/);
+              if (dateMatch) {
+                dateContext = dateMatch[0];
+                break;
+              }
+              parent = parent.parentElement;
+            }
+            workoutSections.push({
+              text: text.substring(0, 120),
+              dateContext,
+              tag: el.tagName,
+              classes: (el.className || '').toString().substring(0, 80)
+            });
+          }
+        }
+
+        // Also look for any date navigation / header elements
+        const dateHeaders = [];
+        const allEls = document.querySelectorAll('h1, h2, h3, h4, [class*="date"], [class*="day"], [class*="calendar"], [class*="header"], time, [datetime]');
+        for (const el of allEls) {
+          const text = (el.textContent || '').trim();
+          if (text.length > 0 && text.length < 100 && /\d/.test(text)) {
+            dateHeaders.push({
+              tag: el.tagName,
+              text: text.substring(0, 80),
+              classes: (el.className || '').toString().substring(0, 60),
+              datetime: el.getAttribute('datetime') || ''
+            });
+          }
+        }
+
+        return {
+          todayDate: `${monthStr} ${todayStr} (${dayStr})`,
+          workoutSections: workoutSections.slice(0, 10),
+          dateHeaders: dateHeaders.slice(0, 15)
+        };
+      });
+
+      console.log(`[BriefExtractor] Today: ${pageStructure.todayDate}`);
+      console.log(`[BriefExtractor] Workout sections: ${JSON.stringify(pageStructure.workoutSections.map(s => ({ text: s.text.substring(0, 60), date: s.dateContext })))}`);
+      console.log(`[BriefExtractor] Date headers: ${JSON.stringify(pageStructure.dateHeaders.map(h => ({ text: h.text.substring(0, 60), tag: h.tag, dt: h.datetime })))}`);
+
       // BTWB whiteboard shows multiple workout tracks. The brief video is
       // typically inside the RX version. We may need to click into it to
       // load the embedded player.
