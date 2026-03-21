@@ -81,12 +81,26 @@ const INSTRUCTIONS_CONTENT = [
   ['  Multiple events:', '  If multiple events overlap, the first enabled match (top row) wins.'],
   ['  Polling:', '  Live event data is checked every 60 seconds.'],
   ['', ''],
+  // ── Screens ──
+  ['═══ SCREENS TAB ═══', ''],
+  ['Controls which display zones are active in the rotation. Disable a zone to remove it from the display without deleting its data.', ''],
+  ['', ''],
+  ['Column', 'Description'],
+  ['Screen', 'Zone name. Must match exactly: wod, video, roster, leaderboard, announcements. Do not edit this column.'],
+  ['Enabled', 'TRUE / FALSE — whether this zone appears in the rotation. Accepts: TRUE, true, yes, 1. Set to FALSE to hide the zone. Blank = disabled.'],
+  ['Description', 'What this zone shows. For reference only — not used by the system.'],
+  ['', ''],
+  ['Behavior:', ''],
+  ['  Disabled zones:', '  Removed from rotation entirely. The display skips them as if they don\'t exist.'],
+  ['  All zones disabled:', '  If every zone is disabled, the system ignores the Screens tab and shows all zones (safety fallback).'],
+  ['  Refresh:', '  Changes take effect on the next Sheets poll (up to 5 minutes). Use the admin panel to trigger an immediate sync.'],
+  ['', ''],
   // ── General notes ──
   ['═══ GENERAL NOTES ═══', ''],
   ['', ''],
   ['Boolean fields', 'Any of these values count as TRUE: TRUE, true, yes, 1. Everything else (including blank) = FALSE.'],
   ['Polling', 'BigBarn polls this spreadsheet every 5 minutes (configurable). Changes may take up to 5 minutes to appear.'],
-  ['Tab names', 'Tab names must match exactly: "Playlist", "Leaderboard", "Announcements", "LiveEvent". This "Instructions" tab is ignored by the system.'],
+  ['Tab names', 'Tab names must match exactly: "Playlist", "Leaderboard", "Announcements", "LiveEvent", "Screens". This "Instructions" tab is ignored by the system.'],
   ['Column names', 'Column names are case-sensitive and must be in row 1. Use lowercase for Playlist (url, title, enabled, days, focus). Use title case for Leaderboard (Name, Team, Points, Title) and Announcements (Title, Body, Active, Priority).'],
   ['Fallbacks', 'If Sheets is not configured or a tab is missing, BigBarn falls back to config.yaml for videos and leaderboard title. Announcements have no fallback.'],
   ['Admin panel', 'The admin panel at http://<your-ip>:3000/admin shows live status and lets you trigger an immediate Sheets sync.'],
@@ -294,6 +308,9 @@ class SheetsClient {
       // Create/update Timing tab with current config values
       await this._writeTimingTab(doc);
 
+      // Create Screens tab with defaults if it doesn't exist
+      await this._writeScreensTab(doc);
+
       // Create LiveEvent tab with headers if it doesn't exist
       if (!doc.sheetsByTitle['LiveEvent']) {
         const liveSheet = await doc.addSheet({
@@ -373,6 +390,51 @@ class SheetsClient {
       console.log('[Sheets] Timing tab created with current config values');
     } catch (err) {
       console.warn(`[Sheets] Failed to create Timing tab: ${err.message}`);
+    }
+  }
+
+  /**
+   * Create the Screens tab if it doesn't exist, populated with all zones enabled.
+   * If it already exists, leave it alone (user may have edited values).
+   */
+  async _writeScreensTab(doc) {
+    try {
+      if (doc.sheetsByTitle['Screens']) {
+        return; // Already exists — don't overwrite user edits
+      }
+
+      const config = configLoader.getConfig() || {};
+      const zones = config.zones || {};
+      const order = zones.rotation_order || ['wod', 'video', 'roster', 'leaderboard', 'announcements'];
+
+      const descriptions = {
+        wod: 'Workout of the Day from Beyond The Whiteboard',
+        video: 'YouTube videos and Instagram reels',
+        roster: 'Live class athlete check-ins from MindBody',
+        leaderboard: 'Team competition scoreboard',
+        announcements: 'Gym notices and alerts'
+      };
+
+      const sheet = await doc.addSheet({
+        title: 'Screens',
+        headerValues: ['Screen', 'Enabled', 'Description']
+      });
+
+      const dataRows = order.map(zone => ({
+        Screen: zone,
+        Enabled: 'TRUE',
+        Description: descriptions[zone] || zone
+      }));
+      await sheet.addRows(dataRows);
+
+      // Set column widths
+      await sheet.updateDimensionProperties('COLUMNS', { pixelSize: 160 }, { startIndex: 0, endIndex: 1 });
+      await sheet.updateDimensionProperties('COLUMNS', { pixelSize: 100 }, { startIndex: 1, endIndex: 2 });
+      await sheet.updateDimensionProperties('COLUMNS', { pixelSize: 400 }, { startIndex: 2, endIndex: 3 });
+
+      console.log('[Sheets] Screens tab created with all zones enabled');
+    } catch (err) {
+      console.warn(`[Sheets] Failed to create Screens tab: ${err.message}`);
     }
   }
 
@@ -542,6 +604,42 @@ class SheetsClient {
         console.warn(`[Sheets] Failed to apply timing values: ${err.message}`);
       }
     }
+  }
+
+  /**
+   * Returns a Set of zone names that are disabled via the Screens tab.
+   * If the Screens tab doesn't exist or all zones are disabled (safety), returns empty Set.
+   */
+  getDisabledZones() {
+    const screensData = this.cachedData['Screens'];
+    if (!screensData || screensData.length === 0) return new Set();
+
+    const disabled = new Set();
+    const allZones = new Set();
+
+    for (const row of screensData) {
+      const screen = (row.Screen || '').trim().toLowerCase();
+      if (!screen) continue;
+      allZones.add(screen);
+
+      const enabled = (row.Enabled || '').toString().trim().toLowerCase();
+      const isEnabled = ['true', 'yes', '1'].includes(enabled);
+      if (!isEnabled) {
+        disabled.add(screen);
+      }
+    }
+
+    // Safety fallback: if ALL zones disabled, ignore the tab entirely
+    if (disabled.size > 0 && disabled.size >= allZones.size) {
+      console.warn('[Sheets] All zones disabled in Screens tab — ignoring (safety fallback)');
+      return new Set();
+    }
+
+    if (disabled.size > 0) {
+      console.log(`[Sheets] Disabled zones from Screens tab: ${[...disabled].join(', ')}`);
+    }
+
+    return disabled;
   }
 
   getTabData(tabName) {

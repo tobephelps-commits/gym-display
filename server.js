@@ -147,6 +147,9 @@ app.get('/api/config', (req, res) => {
     sanitized.health = { zones: {} };
   }
 
+  // Add disabled zones from Sheets Screens tab
+  sanitized.disabledZones = [...sheetsClient.getDisabledZones()];
+
   // Add alert system status
   sanitized.alerts = alerts ? alerts.getStatus() : null;
 

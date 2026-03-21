@@ -15,6 +15,7 @@ function onYouTubeIframeAPIReady() {
   let videoPlayFull = false;
   let lastBoostActive = false;
   let zoneHealth = {}; // { wod: 'healthy', video: 'degraded', ... } — updated from /api/config poll
+  let disabledZones = []; // zones disabled via Sheets Screens tab
 
   // WOD state
   var wodMode = 'loading'; // 'loading' | 'iframe' | 'error'
@@ -952,11 +953,15 @@ function onYouTubeIframeAPIReady() {
     var skipped = 0;
     var nextIndex = (currentIndex + 1) % rotationOrder.length;
 
-    // Skip unhealthy zones (cycle guard: never skip more than full rotation)
+    // Skip unhealthy or disabled zones (cycle guard: never skip more than full rotation)
     while (skipped < rotationOrder.length) {
       var candidate = rotationOrder[nextIndex];
       if (zoneHealth[candidate] === 'unhealthy') {
         console.log('Skipping unhealthy zone: ' + candidate);
+        skipped++;
+        nextIndex = (nextIndex + 1) % rotationOrder.length;
+      } else if (disabledZones.indexOf(candidate) !== -1) {
+        console.log('Skipping disabled zone: ' + candidate);
         skipped++;
         nextIndex = (nextIndex + 1) % rotationOrder.length;
       } else {
@@ -1118,6 +1123,9 @@ function onYouTubeIframeAPIReady() {
         // Update zone health status
         var health = config.health || {};
         zoneHealth = (health && health.zones) || {};
+
+        // Update disabled zones from Sheets Screens tab
+        disabledZones = config.disabledZones || [];
 
         // Log boost state changes
         var boostActive = !!zones.boostActive;
