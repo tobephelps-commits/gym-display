@@ -46,6 +46,9 @@ fix_crash_prefs() {
   rm -rf "$HOME/.config/chromium/Default/Cache" 2>/dev/null
   rm -rf "$HOME/.config/chromium/Default/Code Cache" 2>/dev/null
   rm -rf "$HOME/.config/chromium/Default/GPUCache" 2>/dev/null
+  # NOT incognito since 2026-09-25, so a framed site's cookie consent (raceresult) survives a restart.
+  # Cookies/Local Storage are kept on purpose; saved tabs are not, so a launch only ever opens the kiosk URL.
+  rm -rf "$HOME/.config/chromium/Default/Sessions" 2>/dev/null
 }
 
 # Background watchdog: detects grey screen by checking if kiosk is actually
@@ -127,7 +130,7 @@ while true; do
     --noerrdialogs \
     --disable-infobars \
     --disable-session-crashed-bubble \
-    --incognito \
+    --no-first-run \
     --autoplay-policy=no-user-gesture-required \
     --disable-features=TranslateUI,NetworkServiceInProcess2 \
     --enable-features=NetworkServiceInProcess \
