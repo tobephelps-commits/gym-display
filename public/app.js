@@ -798,6 +798,7 @@ function onYouTubeIframeAPIReady() {
       try { liveEventPlayer.destroy(); } catch (e) {}
       liveEventPlayer = null;
     }
+    // Also drops a web-page (iframe) live event, which lives in the same container.
     var container = document.getElementById('live-yt-container');
     if (container) {
       container.innerHTML = '';
@@ -850,12 +851,22 @@ function onYouTubeIframeAPIReady() {
       }, 10000);
     }
 
-    // Create YouTube player if video changed
-    if (event.videoId !== liveEventVideoId) {
+    // A live event is EITHER a YouTube stream OR any web page (e.g. live race results on
+    // my.raceresult.com). Before, a non-YouTube URL had videoId null, nothing was ever built, and
+    // the screen sat black for the whole event. The source key covers both so a changed URL rebuilds.
+    var sourceKey = event.videoId || event.url || null;
+    if (sourceKey !== liveEventVideoId) {
       destroyLiveEventPlayer();
-      liveEventVideoId = event.videoId;
+      liveEventVideoId = sourceKey;
 
-      if (window._youtubeAPIReady && event.videoId) {
+      if (!event.videoId && event.url) {
+        var frame = document.createElement('iframe');
+        frame.id = 'live-web-frame';
+        frame.src = event.url;
+        frame.setAttribute('allow', 'autoplay; fullscreen');
+        frame.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+        document.getElementById('live-yt-container').appendChild(frame);
+      } else if (window._youtubeAPIReady && event.videoId) {
         var playerDiv = document.createElement('div');
         playerDiv.id = 'live-yt-player';
         document.getElementById('live-yt-container').appendChild(playerDiv);
@@ -1024,7 +1035,9 @@ function onYouTubeIframeAPIReady() {
 
         // Live event detection — overrides normal rotation
         if (state.currentZone === 'live-event' && state.liveEvent) {
-          if (!liveEventActive) {
+          // Re-enter when the coach swaps the event URL mid-event, not only on first activation.
+          var key = state.liveEvent.videoId || state.liveEvent.url || null;
+          if (!liveEventActive || key !== liveEventVideoId) {
             enterLiveEventMode(state.liveEvent);
           }
           return; // Don't process advance/refresh while in live event mode

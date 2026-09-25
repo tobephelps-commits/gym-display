@@ -68,6 +68,11 @@ run_watchdog() {
     if ! curl -s -o /dev/null -w "%{http_code}" "$SERVER_URL" 2>/dev/null | grep -q "200"; then
       continue
     fi
+    # A live event pauses rotation ON PURPOSE, so "no zone advances" is expected, not a hang.
+    # Without this the watchdog killed Chromium every ~10 min for the whole event (added 2026-09-25).
+    if curl -s "$ZONE_URL" 2>/dev/null | grep -q '"currentZone":"live-event"'; then
+      continue
+    fi
 
     # Query zone state — if the server reports an advanceVersion of 0 and
     # uptime > grace period, the kiosk frontend isn't calling advance.

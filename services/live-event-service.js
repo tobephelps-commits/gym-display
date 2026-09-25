@@ -1,6 +1,7 @@
 /**
- * LiveEventService — polls Google Sheets "LiveEvent" tab for scheduled YouTube Live events.
- * When an enabled event's time window includes now, rotation is overridden with fullscreen YouTube Live.
+ * LiveEventService — polls Google Sheets "LiveEvent" tab for scheduled live events.
+ * When an enabled event's time window includes now, rotation is overridden fullscreen: a YouTube URL
+ * plays in the YouTube player, ANY other URL (e.g. live race results) is shown as a web page.
  *
  * Pattern follows AnnouncementsService: constructor takes dependencies, start()/stop() lifecycle,
  * _refresh() polls on interval, getActiveEvent()/isActive()/getStatus() for consumers.
