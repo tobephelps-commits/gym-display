@@ -119,10 +119,40 @@ run_watchdog() {
 # Note: first launch after reboot often gets a network service crash on Chromium 144/Pi 5.
 # The watchdog detects this (~3min) and kills Chromium; the restart loop then relaunches
 # successfully. Pre-flight approach was removed — it conflicted with WodScraper's Puppeteer.
-while true; do
-  fix_crash_prefs
+KIOSK_URL="http://localhost:3000"
+URL_CHECK_INTERVAL=30
+
+# ⭐ A WEB-PAGE LIVE EVENT OPENS TOP-LEVEL, NOT IN THE KIOSK PAGE (2026-09-25).
+# Framed, a site like my.raceresult.com cannot keep its cookie consent, so its banner covered the
+# results on every load. So while a live event with a non-YouTube URL is active, Chromium is launched
+# AT that URL, and relaunched at the kiosk when it ends. YouTube events stay in the kiosk page.
+# Only http(s) URLs are accepted, so a Sheet cell can never smuggle in a Chromium flag.
+# Anything unreadable (server down, bad JSON) falls back to the kiosk page.
+desired_url() {
+  curl -s --max-time 5 "$ZONE_URL" 2>/dev/null | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{const s=JSON.parse(d),e=s.liveEvent;if(s.currentZone==="live-event"&&e&&!e.videoId&&/^https?:\/\//i.test(e.url||"")){console.log(e.url);return}}catch(x){}console.log(process.argv[1])})' "$KIOSK_URL"
+}
+
+# Kills Chromium when the page it should show changes (event starts, ends, or its URL is edited);
+# the loop below relaunches it at the new one.
+run_url_monitor() {
+  local chromium_pid=$1 launched=$2 want
+  while kill -0 "$chromium_pid" 2>/dev/null; do
+    sleep "$URL_CHECK_INTERVAL"
+    want=$(desired_url)
+    if [ -n "$want" ] && [ "$want" != "$launched" ]; then
+      echo "[Kiosk] Page change: ${launched} -> ${want}"
+      kill "$chromium_pid" 2>/dev/null
+      break
+    fi
+  done
+}
+
+while true; do
+  fix_crash_prefs
+  LAUNCH_URL=$(desired_url)
+  LAUNCH_URL=${LAUNCH_URL:-$KIOSK_URL}
 
-  echo "[Kiosk] Launching Chromium kiosk at $(date '+%Y-%m-%d %H:%M:%S')"
+  echo "[Kiosk] Launching Chromium kiosk at $(date '+%Y-%m-%d %H:%M:%S') -> ${LAUNCH_URL}"
 
   chromium-browser \
     --kiosk \
@@ -139,7 +169,7 @@ while true; do
     --overscroll-history-navigation=0 \
     --password-store=basic \
     --disable-gpu-compositing \
-    http://localhost:3000 &
+    "$LAUNCH_URL" &
 
   CHROMIUM_PID=$!
   echo "[Kiosk] Chromium PID: $CHROMIUM_PID"
@@ -147,6 +177,8 @@ while true; do
   # Start background watchdog
   run_watchdog "$CHROMIUM_PID" &
   WATCHDOG_PID=$!
+  run_url_monitor "$CHROMIUM_PID" "$LAUNCH_URL" &
+  URLMON_PID=$!
 
   # Wait for Chromium to exit (crash, OOM, or watchdog kill)
   wait "$CHROMIUM_PID"
@@ -154,8 +186,8 @@ while true; do
   echo "[Kiosk] Chromium exited with code ${EXIT_CODE} at $(date '+%Y-%m-%d %H:%M:%S')"
 
   # Stop watchdog
-  kill "$WATCHDOG_PID" 2>/dev/null
-  wait "$WATCHDOG_PID" 2>/dev/null
+  kill "$WATCHDOG_PID" "$URLMON_PID" 2>/dev/null
+  wait "$WATCHDOG_PID" "$URLMON_PID" 2>/dev/null
 
   # Clean up any orphaned Chromium processes
   pkill -9 -f "chromium.*--kiosk" 2>/dev/null
